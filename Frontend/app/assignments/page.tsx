@@ -82,7 +82,8 @@ export default function AssignmentsPage() {
           {filtered.map((assignment: AssignmentData) => (
             <div
               key={assignment._id}
-              className="rounded-xl border border-border bg-card p-5 hover:shadow-md transition-shadow"
+              onClick={() => router.push(`/assignments/${assignment._id}`)}
+              className="rounded-xl border border-border bg-card p-5 hover:shadow-md transition-all cursor-pointer group"
             >
               <div className="flex items-start justify-between mb-8">
                 <h3 className="text-lg font-bold underline decoration-1 underline-offset-2 capitalize">
@@ -90,7 +91,7 @@ export default function AssignmentsPage() {
                 </h3>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 -mt-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 -mt-1" onClick={(e) => e.stopPropagation()}>
                       <MoreVertical className="h-5 w-5" />
                     </Button>
                   </DropdownMenuTrigger>
