@@ -1,12 +1,13 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import dotenv from 'dotenv';
 import apiRoutes from './routes/api.js';
+import { connectDB } from './config/db.js';
 
-// Load environment variables
-dotenv.config();
+// Connect to MongoDB
+connectDB();
 
 const app = express();
 const httpServer = createServer(app);

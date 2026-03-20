@@ -3,11 +3,12 @@ import Redis from 'ioredis';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { io } from '../index.js';
 import dotenv from 'dotenv';
+import { Assignment } from '../models/Assignment.js';
 
 dotenv.config();
 
 // Connect to Redis
-const redisConnection = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+const redisConnection = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', { maxRetriesPerRequest: null });
 
 // Initialize GoogleGenerativeAI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
@@ -62,12 +63,25 @@ const worker = new Worker(
       // Parse JSON text to validate before emitting
       const paperData = JSON.parse(outputText);
       
+      // Update Database
+      await Assignment.findOneAndUpdate(
+        { jobId: jobId },
+        { status: 'completed', paper: paperData }
+      );
+      
       // Emit the result to the specific WebSocket room
-      io.to(jobId).emit('AI_COMPLETE', paperData);
+      io.to(jobId).emit('AI_COMPLETE', { paperData, jobId });
       console.log(`Successfully completed and emitted results for job ${jobId}`);
       
     } catch (error) {
       console.error(`Error processing job ${jobId}:`, error);
+      
+      // Update Database with failure
+      await Assignment.findOneAndUpdate(
+        { jobId: jobId },
+        { status: 'failed' }
+      );
+      
       // Emit error event to the room
       io.to(jobId).emit('AI_ERROR', { error: 'Failed to generate question paper' });
       throw error;
