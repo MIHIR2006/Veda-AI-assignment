@@ -18,14 +18,17 @@ const worker = new Worker(
   'PaperGenerationQueue',
   async (job) => {
     // Extract the data
-    const { topic, marks, difficulty, questionTypes, instructions, jobId } = job.data;
+    const { topic, marks, difficulty, questionTypes, instructions, jobId, imageBase64, mimeType } = job.data;
     
     try {
       console.log(`Processing AI job ${jobId} for topic: ${topic}`);
+      if (imageBase64) {
+        console.log(`Job ${jobId} includes visual lesson notes!`);
+      }
       
       // Configure the Gemini model
       const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
+        model: "gemini-2.5-flash",
         generationConfig: { responseMimeType: "application/json" }
       });
       
@@ -56,8 +59,20 @@ const worker = new Worker(
         }
       `;
       
+      let finalPrompt: any = prompt;
+      
+      if (imageBase64 && mimeType) {
+        // Strip out the data URI prefix if it exists from the frontend
+        const base64DataStr = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+        
+        finalPrompt = [
+          prompt + "\n\nCRITICAL: Please strictly use the attached lesson notes image as context to generate your questions.",
+          { inlineData: { data: base64DataStr, mimeType } }
+        ];
+      }
+      
       // Await AI generation
-      const result = await model.generateContent(prompt);
+      const result = await model.generateContent(finalPrompt);
       const outputText = result.response.text();
       
       // Parse JSON text to validate before emitting

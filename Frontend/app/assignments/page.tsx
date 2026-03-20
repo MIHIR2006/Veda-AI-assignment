@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -12,30 +12,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-interface Assignment {
-  id: string;
-  title: string;
-  assignedOn: string;
-  dueDate?: string;
-}
-
-const mockAssignments: Assignment[] = [
-  { id: "1", title: "Quiz on Electricity", assignedOn: "20-06-2025", dueDate: "21-06-2025" },
-  { id: "2", title: "Quiz on Electricity", assignedOn: "20-06-2025", dueDate: "21-06-2025" },
-  { id: "3", title: "Quiz on Electricity", assignedOn: "20-06-2025", dueDate: "21-06-2025" },
-  { id: "4", title: "Quiz on Electricity", assignedOn: "20-06-2025", dueDate: "21-06-2025" },
-  { id: "5", title: "Quiz on Electricity", assignedOn: "20-06-2025", dueDate: "21-06-2025" },
-  { id: "6", title: "Quiz on Electricity", assignedOn: "20-06-2025", dueDate: "21-06-2025" },
-];
+import { useAssignmentStore, AssignmentData } from "@/store/assignmentStore";
 
 export default function AssignmentsPage() {
   const router = useRouter();
-  const [assignments] = useState<Assignment[]>(mockAssignments);
+  const { assignments, fetchAssignments } = useAssignmentStore();
   const [search, setSearch] = useState("");
 
-  const filtered = assignments.filter((a) =>
-    a.title.toLowerCase().includes(search.toLowerCase())
+  useEffect(() => {
+    fetchAssignments();
+  }, [fetchAssignments]);
+
+  const filtered = assignments.filter((a: AssignmentData) =>
+    a.topic?.toLowerCase().includes(search.toLowerCase())
   );
 
   if (assignments.length === 0) {
@@ -90,14 +79,14 @@ export default function AssignmentsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filtered.map((assignment) => (
+          {filtered.map((assignment: AssignmentData) => (
             <div
-              key={assignment.id}
+              key={assignment._id}
               className="rounded-xl border border-border bg-card p-5 hover:shadow-md transition-shadow"
             >
               <div className="flex items-start justify-between mb-8">
-                <h3 className="text-lg font-bold underline decoration-1 underline-offset-2">
-                  {assignment.title}
+                <h3 className="text-lg font-bold underline decoration-1 underline-offset-2 capitalize">
+                  {assignment.topic || 'Untitled Assignment'}
                 </h3>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -106,7 +95,7 @@ export default function AssignmentsPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem className="gap-2">
+                    <DropdownMenuItem className="gap-2" onClick={() => router.push(`/assignments/${assignment._id}`)}>
                       <Eye className="h-4 w-4" />
                       View Assignment
                     </DropdownMenuItem>
@@ -119,13 +108,11 @@ export default function AssignmentsPage() {
               </div>
               <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>
-                  <span className="font-semibold text-foreground">Assigned on</span> : {assignment.assignedOn}
+                  <span className="font-semibold text-foreground">Assigned on</span> : {new Date(assignment.createdAt).toLocaleDateString()}
                 </span>
-                {assignment.dueDate && (
-                  <span>
-                    <span className="font-semibold text-foreground">Due</span> : {assignment.dueDate}
-                  </span>
-                )}
+                <span className="px-2 py-1 rounded-full text-xs font-semibold bg-neutral-100 text-neutral-800">
+                  {assignment.status}
+                </span>
               </div>
             </div>
           ))}

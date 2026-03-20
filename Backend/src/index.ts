@@ -13,10 +13,8 @@ const app = express();
 const httpServer = createServer(app);
 
 // Initialize CORS and JSON parsing
-app.use(cors({
-  origin: 'http://localhost:3000'
-}));
-app.use(express.json());
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
 
 // Set up Socket.io server
 export const io = new Server(httpServer, {

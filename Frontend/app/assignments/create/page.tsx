@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, Plus, Minus, X, ArrowLeft, ArrowRight } from "lucide-react";
+import { useAssignmentStore } from "@/store/assignmentStore";
 
 interface QuestionRow {
   id: string;
@@ -26,7 +27,27 @@ const questionTypes = [
 
 export default function CreateAssignmentPage() {
   const router = useRouter();
+  const { startJob } = useAssignmentStore();
   const [step, setStep] = useState(1);
+  const [topic, setTopic] = useState("");
+  const [instructions, setInstructions] = useState("");
+  const [fileData, setFileData] = useState<{ name: string, base64: string, mimeType: string } | null>(null);
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selected = e.target.files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFileData({
+          name: selected.name,
+          base64: reader.result as string,
+          mimeType: selected.type
+        });
+      };
+      reader.readAsDataURL(selected);
+    }
+  };
+
   const [questions, setQuestions] = useState<QuestionRow[]>([
     { id: "1", type: "Multiple Choice Questions", count: 4, marks: 1 },
     { id: "2", type: "Short Questions", count: 3, marks: 2 },
@@ -46,6 +67,40 @@ export default function CreateAssignmentPage() {
 
   const updateRow = (id: string, field: keyof QuestionRow, value: number | string) => {
     setQuestions(questions.map((q) => (q.id === id ? { ...q, [field]: value } : q)));
+  };
+
+  const submitAssignment = async () => {
+    try {
+      const payload: any = {
+        topic: topic || "General Science",
+        marks: questions.reduce((s, q) => s + q.count * q.marks, 0),
+        difficulty: "Medium",
+        questionTypes: questions.map(q => q.type),
+        instructions: instructions
+      };
+      
+      if (fileData) {
+        payload.imageBase64 = fileData.base64;
+        payload.mimeType = fileData.mimeType;
+      }
+
+      const res = await fetch('http://localhost:8080/api/generate-paper', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        // data.jobId, data.assignmentId
+        startJob(data.jobId);
+        router.push(`/assignments/${data.assignmentId}`);
+      } else {
+        console.error("Failed to generate");
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -73,24 +128,40 @@ export default function CreateAssignmentPage() {
               <p className="text-sm text-muted-foreground">Basic information about your assignment</p>
             </div>
 
-            <div className="border-2 border-dashed border-border rounded-xl p-8 flex flex-col items-center justify-center text-center">
-              <Upload className="h-10 w-10 text-muted-foreground mb-3" />
-              <p className="text-sm font-medium mb-1">Choose a file or drag & drop it here</p>
-              <p className="text-xs text-muted-foreground mb-3">JPEG, PNG, upto 10MB</p>
-              <Button variant="outline" size="sm">Browse Files</Button>
+            <div className="border-2 border-dashed border-border rounded-xl p-8 flex flex-col items-center justify-center text-center relative overflow-hidden group">
+              <input 
+                type="file" 
+                accept="image/png, image/jpeg" 
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                onChange={handleFileChange}
+                title="Upload lesson notes"
+              />
+              <Upload className={`h-10 w-10 mb-3 ${fileData ? 'text-primary' : 'text-muted-foreground'}`} />
+              
+              {fileData ? (
+                <>
+                  <p className="text-sm font-medium mb-1 text-primary">{fileData.name}</p>
+                  <p className="text-xs text-muted-foreground mb-3">Ready to be analyzed by AI</p>
+                  <Button variant="secondary" size="sm" className="relative z-20" onClick={(e) => { e.preventDefault(); setFileData(null); }}>Remove File</Button>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-medium mb-1">Choose a file or drag & drop it here</p>
+                  <p className="text-xs text-muted-foreground mb-3">JPEG, PNG, upto 10MB</p>
+                  <Button variant="outline" size="sm">Browse Files</Button>
+                </>
+              )}
             </div>
             <p className="text-xs text-muted-foreground text-center -mt-3">
-              Upload images of your preferred document/image
+              Upload images of your preferred document/image (optional)
             </p>
 
             <div>
-              <label className="text-sm font-bold mb-2 block">Due Date</label>
-              <div className="relative">
-                <Input placeholder="Choose a chapter" className="bg-card" />
-                <button className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <Plus className="h-4 w-4 text-muted-foreground" />
-                </button>
-              </div>
+              <label className="text-sm font-bold mb-2 block">Topic / Title</label>
+              <Input placeholder="E.g., CBSE Grade 8 Science" value={topic} onChange={(e) => setTopic(e.target.value)} className="bg-card mb-4" />
+              
+              <label className="text-sm font-bold mb-2 block">Additional Instructions</label>
+              <Input placeholder="E.g., Provide hints for each question" value={instructions} onChange={(e) => setInstructions(e.target.value)} className="bg-card" />
             </div>
 
             <div>
@@ -204,7 +275,13 @@ export default function CreateAssignmentPage() {
           <Button
             variant="dark"
             size="lg"
-            onClick={() => (step === 1 ? setStep(2) : router.push("/assignments"))}
+            onClick={() => {
+              if (step === 1) {
+                setStep(2);
+              } else {
+                submitAssignment();
+              }
+            }}
             className="gap-2"
           >
             {step === 1 ? "Next" : "Create Assignment"}

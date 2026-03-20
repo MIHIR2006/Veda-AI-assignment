@@ -15,7 +15,7 @@ export const paperQueue = new Queue('PaperGenerationQueue', { connection: redisC
 // CREATE: Generate a new paper
 router.post('/generate-paper', async (req, res) => {
   try {
-    const { topic, marks, difficulty, questionTypes, instructions } = req.body;
+    const { topic, marks, difficulty, questionTypes, instructions, imageBase64, mimeType } = req.body;
     
     // Generate a unique jobId
     const jobId = uuidv4();
@@ -36,7 +36,7 @@ router.post('/generate-paper', async (req, res) => {
     // Add a job to the queue containing the body payload + jobId
     await paperQueue.add(
       'generate-paper',
-      { topic, marks, difficulty, questionTypes, instructions, jobId },
+      { topic, marks, difficulty, questionTypes, instructions, jobId, imageBase64, mimeType },
       { jobId } // Pass the jobId as the BullMQ job ID option
     );
     
