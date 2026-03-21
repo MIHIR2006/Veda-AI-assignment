@@ -1,16 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useReactToPrint } from "react-to-print";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { useAssignmentStore, AssignmentData } from "@/store/assignmentStore";
-import { Download } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
 
 export default function AssignmentResultPage() {
   const params = useParams();
   const id = params?.id as string;
   const router = useRouter();
+  const contentRef = useRef<HTMLDivElement>(null);
+  const reactToPrintFn = useReactToPrint({ 
+    contentRef, 
+    documentTitle: "Assignment_Paper",
+    pageStyle: `
+      @page {
+        size: A4;
+        margin: 0mm; /* Removes default browser headers/footers */
+      }
+      @media print {
+        body {
+          -webkit-print-color-adjust: exact;
+        }
+      }
+    `
+  });
+
   const [assignment, setAssignment] = useState<AssignmentData | null>(null);
   const { generatedPaper, status, activeJobId, initializeSocket, disconnectSocket, startJob } = useAssignmentStore();
 
@@ -42,6 +60,23 @@ export default function AssignmentResultPage() {
     
   const isGenerating = (assignment?.status === 'pending' && status !== 'completed') || status === 'generating';
 
+  const handleRegenerate = async () => {
+    try {
+      const res = await fetch(`http://localhost:8080/api/assignments/${id}/regenerate`, { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        startJob(data.jobId);
+        setAssignment(prev => prev ? { ...prev, status: 'pending', jobId: data.jobId } : null);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDownloadPDF = () => {
+    reactToPrintFn();
+  };
+
   return (
     <AppLayout title="Assignment Output" showBack onBack={() => router.push("/assignments")}>
       <div className="max-w-4xl mx-auto animate-fade-in pb-16">
@@ -53,13 +88,20 @@ export default function AssignmentResultPage() {
           </h2>
           
           {!isGenerating && paper && (
-            <Button variant="secondary" size="icon" className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-white/10 hover:bg-white/20 text-white border-0">
-              <Download className="h-5 w-5" />
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handleRegenerate} variant="secondary" className="bg-white/10 hover:bg-white/20 text-white border-0">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Regenerate
+              </Button>
+              <Button onClick={handleDownloadPDF} variant="secondary" size="icon" className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-white/10 hover:bg-white/20 text-white border-0">
+                <Download className="h-5 w-5" />
+              </Button>
+            </div>
           )}
         </div>
 
-        <div className="bg-white rounded-[2rem] p-6 md:p-12 shadow-sm border border-neutral-100 min-h-[600px]">
+        <div id="pdf-content" ref={contentRef} className="bg-white rounded-[2rem] p-6 md:p-12 shadow-sm border border-neutral-100 min-h-[600px] print:m-0 print:border-0 print:shadow-none print:w-[210mm] print:mx-auto">
+          <div style={{ padding: '24px 48px' }}>
           {isGenerating ? (
             <div className="flex flex-col items-center justify-center h-64 text-muted-foreground animate-pulse">
               <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
@@ -118,6 +160,7 @@ export default function AssignmentResultPage() {
               <p>Failed to load paper or paper generation failed.</p>
             </div>
           )}
+          </div>
         </div>
       </div>
     </AppLayout>

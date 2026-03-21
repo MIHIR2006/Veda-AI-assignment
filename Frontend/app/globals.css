@@ -124,3 +124,27 @@
     scrollbar-width: thin;
   }
 }
+
+@media print {
+  /* Hide everything */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Show only the targeted print content */
+  #pdf-content, #pdf-content * {
+    visibility: visible;
+  }
+  
+  /* Position the content perfectly at the top left of the printable page */
+  #pdf-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}

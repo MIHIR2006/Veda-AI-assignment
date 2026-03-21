@@ -76,6 +76,7 @@ const worker = new Worker(
       
       io.to(jobId).emit('AI_COMPLETE', { paperData, jobId });
       console.log(`Successfully completed and emitted results for job ${jobId}`);
+      await redisConnection.del('assignments_list');
       
     } catch (error) {
       console.error(`Error processing job ${jobId}:`, error);
@@ -86,6 +87,7 @@ const worker = new Worker(
       );
       
       io.to(jobId).emit('AI_ERROR', { error: 'Failed to generate question paper' });
+      await redisConnection.del('assignments_list');
       throw error;
     }
   },

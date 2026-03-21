@@ -35,6 +35,8 @@ router.post('/generate-paper', async (req, res) => {
       { jobId } // Pass the jobId as the BullMQ job ID option
     );
     
+    await redisConnection.del('assignments_list');
+    
     res.status(202).json({ message: 'Job queued', jobId, assignmentId: assignment._id });
   } catch (error) {
     console.error('Error queuing job:', error);
@@ -44,7 +46,13 @@ router.post('/generate-paper', async (req, res) => {
 
 router.get('/assignments', async (req, res) => {
   try {
+    const cached = await redisConnection.get('assignments_list');
+    if (cached) {
+      res.json(JSON.parse(cached));
+      return;
+    }
     const assignments = await Assignment.find().sort({ createdAt: -1 });
+    await redisConnection.set('assignments_list', JSON.stringify(assignments), 'EX', 300);
     res.json(assignments);
   } catch (error) {
     console.error('Error fetching assignments:', error);
@@ -81,3 +89,40 @@ router.delete('/assignments/:id', async (req, res) => {
 });
 
 export default router;
+
+router.post('/assignments/:id/regenerate', async (req, res) => {
+  try {
+    const assignment = await Assignment.findById(req.params.id);
+    if (!assignment) {
+      res.status(404).json({ error: 'Assignment not found' });
+      return;
+    }
+    
+    const newJobId = uuidv4();
+    assignment.jobId = newJobId;
+    assignment.status = 'pending';
+    assignment.paper = undefined;
+    await assignment.save();
+    
+    await redisConnection.del('assignments_list');
+    
+    await paperQueue.add(
+      'generate-paper',
+      {
+        topic: assignment.topic,
+        marks: assignment.marks,
+        difficulty: assignment.difficulty,
+        questionTypes: assignment.questionTypes,
+        instructions: assignment.instructions,
+        dueDate: assignment.dueDate,
+        jobId: newJobId
+      },
+      { jobId: newJobId }
+    );
+    
+    res.status(202).json({ message: 'Regeneration queued', jobId: newJobId });
+  } catch (error) {
+    console.error('Error regenerating:', error);
+    res.status(500).json({ error: 'Failed to regenerate job' });
+  }
+});
