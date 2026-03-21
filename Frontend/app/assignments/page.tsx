@@ -16,7 +16,7 @@ import { useAssignmentStore, AssignmentData } from "@/store/assignmentStore";
 
 export default function AssignmentsPage() {
   const router = useRouter();
-  const { assignments, fetchAssignments } = useAssignmentStore();
+  const { assignments, fetchAssignments, loadingAssignments } = useAssignmentStore();
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -26,6 +26,16 @@ export default function AssignmentsPage() {
   const filtered = assignments.filter((a: AssignmentData) =>
     a.topic?.toLowerCase().includes(search.toLowerCase())
   );
+
+  if (loadingAssignments) {
+    return (
+      <AppLayout title="Assignment" showBack onBack={() => router.push("/")}>
+        <div className="flex flex-1 items-center justify-center py-24">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
 
   if (assignments.length === 0) {
     return (

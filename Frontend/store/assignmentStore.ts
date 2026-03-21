@@ -35,6 +35,7 @@ export type AssignmentState = {
   activeJobId: string | null;
   generatedPaper: PaperData | null;
   status: 'idle' | 'generating' | 'completed' | 'failed';
+  loadingAssignments: boolean;
   error: string | null;
   socket: Socket | null;
   
@@ -50,16 +51,19 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
   activeJobId: null,
   generatedPaper: null,
   status: 'idle',
+  loadingAssignments: false,
   error: null,
   socket: null,
 
   fetchAssignments: async () => {
+    set({ loadingAssignments: true });
     try {
       const res = await fetch('http://localhost:8080/api/assignments');
       const data = await res.json();
-      set({ assignments: data });
+      set({ assignments: data, loadingAssignments: false });
     } catch (error) {
       console.error("Failed to fetch assignments", error);
+      set({ loadingAssignments: false });
     }
   },
 
