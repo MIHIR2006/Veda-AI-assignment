@@ -24,6 +24,7 @@ export type AssignmentData = {
   difficulty: string;
   questionTypes: string[];
   instructions?: string;
+  dueDate?: string;
   jobId: string;
   status: 'pending' | 'completed' | 'failed';
   paper?: PaperData;
@@ -75,7 +76,6 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
       error: null
     });
     
-    // Auto initiate socket subscription
     const state = get();
     if (state.socket) {
       state.socket.emit('joinJobRoom', jobId);
@@ -90,7 +90,6 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
   },
 
   initializeSocket: () => {
-    // Only connect if not already connected
     if (get().socket) return;
     
     const socket = io('http://localhost:8080');

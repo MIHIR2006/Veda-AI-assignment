@@ -15,7 +15,6 @@ export default function AssignmentResultPage() {
   const { generatedPaper, status, activeJobId, initializeSocket, disconnectSocket, startJob } = useAssignmentStore();
 
   useEffect(() => {
-    // If not creating right now, fetch by ID
     const fetchIt = async () => {
       if (!id) return;
       try {
@@ -35,21 +34,17 @@ export default function AssignmentResultPage() {
     
     fetchIt();
     
-    // Cleanup socket logic could go here, but store handles persistent connection
   }, [id, startJob]);
 
-  // Determine which paper data to show: the live generation one, or the statically fetched one
   const paper = activeJobId === assignment?.jobId && status === 'completed'
     ? generatedPaper
     : assignment?.paper;
     
-  // If it's pending / generating
   const isGenerating = (assignment?.status === 'pending' && status !== 'completed') || status === 'generating';
 
   return (
     <AppLayout title="Assignment Output" showBack onBack={() => router.push("/assignments")}>
       <div className="max-w-4xl mx-auto animate-fade-in pb-16">
-        {/* Dark Header Banner */}
         <div className="bg-[#2A2A2A] text-white rounded-[2rem] p-6 md:p-8 mb-6 shadow-md relative overflow-hidden">
           <h2 className="text-xl md:text-2xl font-semibold max-w-2xl leading-snug mb-6">
             {isGenerating ? "Generating your custom Question Paper..." :
@@ -64,7 +59,6 @@ export default function AssignmentResultPage() {
           )}
         </div>
 
-        {/* Paper Container */}
         <div className="bg-white rounded-[2rem] p-6 md:p-12 shadow-sm border border-neutral-100 min-h-[600px]">
           {isGenerating ? (
             <div className="flex flex-col items-center justify-center h-64 text-muted-foreground animate-pulse">
@@ -73,7 +67,6 @@ export default function AssignmentResultPage() {
             </div>
           ) : paper ? (
             <div className="text-black space-y-8 font-serif">
-              {/* Paper Header block */}
               <div className="text-center space-y-2 mb-10">
                 <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Veda School</h1>
                 <p className="text-lg font-semibold">Subject: AI Generated Question Paper</p>
@@ -88,14 +81,12 @@ export default function AssignmentResultPage() {
                 <p>All questions are compulsory unless stated otherwise.</p>
               </div>
 
-              {/* Student Details Fields */}
               <div className="space-y-3 mb-12 text-sm md:text-base">
                 <p>Name: <span className="inline-block w-64 border-b border-black"></span></p>
                 <p>Roll Number: <span className="inline-block w-48 border-b border-black"></span></p>
                 <p>Class: ________ Section: ________</p>
               </div>
 
-              {/* Sections */}
               {paper.sections?.map((section: any, idx: number) => (
                 <div key={idx} className="mb-10">
                   <h3 className="text-center text-xl font-bold mb-4">{section.title}</h3>

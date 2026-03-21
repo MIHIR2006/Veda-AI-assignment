@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,12 +12,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Upload, Plus, Minus, X, ArrowLeft, ArrowRight } from "lucide-react";
 import { useAssignmentStore } from "@/store/assignmentStore";
 
-interface QuestionRow {
-  id: string;
-  type: string;
-  count: number;
-  marks: number;
-}
+const questionSchema = z.object({
+  id: z.string(),
+  type: z.string().min(1),
+  count: z.number().min(1, "At least 1 question"),
+  marks: z.number().min(1, "Marks must be >= 1"),
+});
+
+const formSchema = z.object({
+  topic: z.string().min(3, "Topic must be at least 3 characters"),
+  instructions: z.string().optional(),
+  dueDate: z.string().min(1, "Due Date is required"),
+  questions: z.array(questionSchema).min(1, "At least one question type is required"),
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 const questionTypes = [
   "Multiple Choice Questions",
@@ -29,10 +41,25 @@ export default function CreateAssignmentPage() {
   const router = useRouter();
   const { startJob } = useAssignmentStore();
   const [step, setStep] = useState(1);
-  const [topic, setTopic] = useState("");
-  const [instructions, setInstructions] = useState("");
   const [fileData, setFileData] = useState<{ name: string, base64: string, mimeType: string } | null>(null);
-  
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      topic: "",
+      instructions: "",
+      dueDate: "",
+      questions: [
+        { id: "1", type: "Multiple Choice Questions", count: 4, marks: 1 },
+        { id: "2", type: "Short Questions", count: 3, marks: 2 },
+        { id: "3", type: "Diagram/Graph-Based Questions", count: 5, marks: 5 },
+      ]
+    }
+  });
+
+  const { register, watch, setValue, trigger, formState: { errors } } = form;
+  const questions = watch("questions");
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selected = e.target.files[0];
@@ -48,35 +75,30 @@ export default function CreateAssignmentPage() {
     }
   };
 
-  const [questions, setQuestions] = useState<QuestionRow[]>([
-    { id: "1", type: "Multiple Choice Questions", count: 4, marks: 1 },
-    { id: "2", type: "Short Questions", count: 3, marks: 2 },
-    { id: "3", type: "Diagram/Graph-Based Questions", count: 5, marks: 5 },
-  ]);
-
   const addQuestionRow = () => {
-    setQuestions([
+    setValue("questions", [
       ...questions,
       { id: Date.now().toString(), type: questionTypes[0], count: 1, marks: 1 },
     ]);
   };
 
   const removeRow = (id: string) => {
-    setQuestions(questions.filter((q) => q.id !== id));
+    setValue("questions", questions.filter((q) => q.id !== id));
   };
 
-  const updateRow = (id: string, field: keyof QuestionRow, value: number | string) => {
-    setQuestions(questions.map((q) => (q.id === id ? { ...q, [field]: value } : q)));
+  const updateRow = (id: string, field: keyof z.infer<typeof questionSchema>, value: number | string) => {
+    setValue("questions", questions.map((q) => (q.id === id ? { ...q, [field]: value } : q)));
   };
 
   const submitAssignment = async () => {
     try {
       const payload: any = {
-        topic: topic || "General Science",
+        topic: watch("topic") || "General Science",
         marks: questions.reduce((s, q) => s + q.count * q.marks, 0),
         difficulty: "Medium",
         questionTypes: questions.map(q => q.type),
-        instructions: instructions
+        instructions: watch("instructions"),
+        dueDate: watch("dueDate")
       };
       
       if (fileData) {
@@ -92,7 +114,6 @@ export default function CreateAssignmentPage() {
       
       if (res.ok) {
         const data = await res.json();
-        // data.jobId, data.assignmentId
         startJob(data.jobId);
         router.push(`/assignments/${data.assignmentId}`);
       } else {
@@ -148,7 +169,7 @@ export default function CreateAssignmentPage() {
                 <>
                   <p className="text-sm font-medium mb-1">Choose a file or drag & drop it here</p>
                   <p className="text-xs text-muted-foreground mb-3">JPEG, PNG, upto 10MB</p>
-                  <Button variant="outline" size="sm">Browse Files</Button>
+                  <Button type="button" variant="outline" size="sm">Browse Files</Button>
                 </>
               )}
             </div>
@@ -157,11 +178,17 @@ export default function CreateAssignmentPage() {
             </p>
 
             <div>
-              <label className="text-sm font-bold mb-2 block">Topic / Title</label>
-              <Input placeholder="E.g., CBSE Grade 8 Science" value={topic} onChange={(e) => setTopic(e.target.value)} className="bg-card mb-4" />
+              <label className="text-sm font-bold mb-2 block">Topic / Title <span className="text-destructive">*</span></label>
+              <Input placeholder="E.g., CBSE Grade 8 Science" {...register("topic")} className="bg-card mb-1" />
+              {errors.topic && <p className="text-red-500 text-xs mb-3">{errors.topic.message}</p>}
               
-              <label className="text-sm font-bold mb-2 block">Additional Instructions</label>
-              <Input placeholder="E.g., Provide hints for each question" value={instructions} onChange={(e) => setInstructions(e.target.value)} className="bg-card" />
+              <label className="text-sm font-bold mb-2 mt-4 block">Due Date <span className="text-destructive">*</span></label>
+              <Input type="date" {...register("dueDate")} className="bg-card mb-1" />
+              {errors.dueDate && <p className="text-red-500 text-xs mb-3">{errors.dueDate.message}</p>}
+
+              <label className="text-sm font-bold mb-2 mt-4 block">Additional Instructions</label>
+              <Input placeholder="E.g., Provide hints for each question" {...register("instructions")} className="bg-card mb-1" />
+              {errors.instructions && <p className="text-red-500 text-xs mb-3">{errors.instructions.message}</p>}
             </div>
 
             <div>
@@ -186,12 +213,13 @@ export default function CreateAssignmentPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <button onClick={() => removeRow(q.id)} className="text-muted-foreground hover:text-destructive">
+                    <button type="button" onClick={() => removeRow(q.id)} className="text-muted-foreground hover:text-destructive">
                       <X className="h-4 w-4" />
                     </button>
                   </div>
                   <div className="flex items-center gap-1">
                     <Button
+                      type="button"
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
@@ -201,6 +229,7 @@ export default function CreateAssignmentPage() {
                     </Button>
                     <span className="w-8 text-center text-sm font-medium">{q.count}</span>
                     <Button
+                      type="button"
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
@@ -211,6 +240,7 @@ export default function CreateAssignmentPage() {
                   </div>
                   <div className="flex items-center gap-1">
                     <Button
+                      type="button"
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
@@ -220,6 +250,7 @@ export default function CreateAssignmentPage() {
                     </Button>
                     <span className="w-8 text-center text-sm font-medium">{q.marks}</span>
                     <Button
+                      type="button"
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
@@ -230,7 +261,7 @@ export default function CreateAssignmentPage() {
                   </div>
                 </div>
               ))}
-              <Button variant="ghost" size="sm" onClick={addQuestionRow} className="gap-1 text-primary mt-2">
+              <Button type="button" variant="ghost" size="sm" onClick={addQuestionRow} className="gap-1 text-primary mt-2">
                 <Plus className="h-4 w-4" />
                 Add Question Type
               </Button>
@@ -244,15 +275,21 @@ export default function CreateAssignmentPage() {
               <h2 className="text-xl font-bold mb-1">Review & Confirm</h2>
               <p className="text-sm text-muted-foreground">Review your assignment details before creating</p>
             </div>
+            
+            <div className="rounded-lg bg-accent p-4 mb-4">
+              <h3 className="font-bold text-lg">{watch("topic")}</h3>
+              <p className="text-sm text-muted-foreground mt-1">Due: {new Date(watch("dueDate")).toLocaleDateString()}</p>
+            </div>
+
             <div className="space-y-3">
               {questions.map((q) => (
-                <div key={q.id} className="flex justify-between rounded-lg bg-accent p-3 text-sm">
-                  <span>{q.type}</span>
+                <div key={q.id} className="flex justify-between rounded-lg bg-background border border-border p-3 text-sm">
+                  <span className="font-medium">{q.type}</span>
                   <span className="text-muted-foreground">{q.count} questions × {q.marks} marks</span>
                 </div>
               ))}
             </div>
-            <div className="flex justify-between pt-2 text-sm font-bold">
+            <div className="flex justify-between pt-2 text-sm font-bold border-t border-border mt-4">
               <span>Total</span>
               <span>
                 {questions.reduce((s, q) => s + q.count, 0)} questions,{" "}
@@ -264,6 +301,7 @@ export default function CreateAssignmentPage() {
 
         <div className="flex justify-between mt-8">
           <Button
+            type="button"
             variant="outline"
             size="lg"
             onClick={() => (step === 1 ? router.push("/assignments") : setStep(1))}
@@ -273,11 +311,13 @@ export default function CreateAssignmentPage() {
             Previous
           </Button>
           <Button
+            type="button"
             variant="dark"
             size="lg"
-            onClick={() => {
+            onClick={async () => {
               if (step === 1) {
-                setStep(2);
+                const isValid = await trigger(["topic", "dueDate", "questions"]);
+                if (isValid) setStep(2);
               } else {
                 submitAssignment();
               }

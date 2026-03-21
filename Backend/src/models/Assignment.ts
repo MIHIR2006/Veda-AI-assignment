@@ -6,6 +6,7 @@ export interface IAssignment extends Document {
   difficulty: string;
   questionTypes: string[];
   instructions?: string;
+  dueDate?: Date;
   jobId: string;
   status: 'pending' | 'completed' | 'failed';
   paper?: any;
@@ -20,6 +21,7 @@ const AssignmentSchema: Schema = new Schema(
     difficulty: { type: String, required: true },
     questionTypes: [{ type: String }],
     instructions: { type: String },
+    dueDate: { type: Date },
     jobId: { type: String, required: true, unique: true },
     status: { 
       type: String, 

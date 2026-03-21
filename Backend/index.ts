@@ -9,11 +9,9 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-// 1. Setup CORS for Next.js Frontend
 app.use(cors({ origin: 'http://localhost:3000' }));
 app.use(express.json());
 
-// 2. Initialize WebSockets
 export const io = new Server(server, {
   cors: {
     origin: 'http://localhost:3000',
@@ -35,12 +33,10 @@ io.on('connection', (socket) => {
   });
 });
 
-// 3. Basic Health Route
 app.get('/', (req, res) => {
   res.send('VedaAI Backend is running smoothly.');
 });
 
-// We will import our API routes here in the next step!
 
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {

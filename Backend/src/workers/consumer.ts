@@ -7,17 +7,13 @@ import { Assignment } from '../models/Assignment.js';
 
 dotenv.config();
 
-// Connect to Redis
 const redisConnection = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', { maxRetriesPerRequest: null });
 
-// Initialize GoogleGenerativeAI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
-// Create BullMQ Worker
 const worker = new Worker(
   'PaperGenerationQueue',
   async (job) => {
-    // Extract the data
     const { topic, marks, difficulty, questionTypes, instructions, jobId, imageBase64, mimeType } = job.data;
     
     try {
@@ -26,13 +22,11 @@ const worker = new Worker(
         console.log(`Job ${jobId} includes visual lesson notes!`);
       }
       
-      // Configure the Gemini model
       const model = genAI.getGenerativeModel({
         model: "gemini-2.5-flash",
         generationConfig: { responseMimeType: "application/json" }
       });
       
-      // Write strict prompt demanding exact JSON structure
       const prompt = `
         You are an expert educator. Create an exam paper matching the following criteria:
         - Topic: ${topic}
@@ -62,7 +56,6 @@ const worker = new Worker(
       let finalPrompt: any = prompt;
       
       if (imageBase64 && mimeType) {
-        // Strip out the data URI prefix if it exists from the frontend
         const base64DataStr = imageBase64.replace(/^data:image\/\w+;base64,/, "");
         
         finalPrompt = [
@@ -71,33 +64,27 @@ const worker = new Worker(
         ];
       }
       
-      // Await AI generation
       const result = await model.generateContent(finalPrompt);
       const outputText = result.response.text();
       
-      // Parse JSON text to validate before emitting
       const paperData = JSON.parse(outputText);
       
-      // Update Database
       await Assignment.findOneAndUpdate(
         { jobId: jobId },
         { status: 'completed', paper: paperData }
       );
       
-      // Emit the result to the specific WebSocket room
       io.to(jobId).emit('AI_COMPLETE', { paperData, jobId });
       console.log(`Successfully completed and emitted results for job ${jobId}`);
       
     } catch (error) {
       console.error(`Error processing job ${jobId}:`, error);
       
-      // Update Database with failure
       await Assignment.findOneAndUpdate(
         { jobId: jobId },
         { status: 'failed' }
       );
       
-      // Emit error event to the room
       io.to(jobId).emit('AI_ERROR', { error: 'Failed to generate question paper' });
       throw error;
     }

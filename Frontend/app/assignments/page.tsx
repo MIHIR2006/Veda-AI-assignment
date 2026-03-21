@@ -18,8 +18,10 @@ export default function AssignmentsPage() {
   const router = useRouter();
   const { assignments, fetchAssignments, loadingAssignments } = useAssignmentStore();
   const [search, setSearch] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     fetchAssignments();
   }, [fetchAssignments]);
 
@@ -119,8 +121,13 @@ export default function AssignmentsPage() {
               </div>
               <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>
-                  <span className="font-semibold text-foreground">Assigned on</span> : {new Date(assignment.createdAt).toLocaleDateString()}
+                  <span className="font-semibold text-foreground">Assigned on</span> : {isMounted ? new Date(assignment.createdAt).toLocaleDateString() : ''}
                 </span>
+                {assignment.dueDate && (
+                  <span>
+                    <span className="font-semibold text-foreground">Due</span> : {isMounted ? new Date(assignment.dueDate).toLocaleDateString() : ''}
+                  </span>
+                )}
                 <span className="px-2 py-1 rounded-full text-xs font-semibold bg-neutral-100 text-neutral-800">
                   {assignment.status}
                 </span>
