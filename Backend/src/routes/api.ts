@@ -81,14 +81,13 @@ router.delete('/assignments/:id', async (req, res) => {
       res.status(404).json({ error: 'Assignment not found' });
       return;
     }
+    await redisConnection.del('assignments_list');
     res.json({ message: 'Assignment deleted successfully' });
   } catch (error) {
     console.error('Error deleting assignment:', error);
     res.status(500).json({ error: 'Failed to delete assignment' });
   }
 });
-
-export default router;
 
 router.post('/assignments/:id/regenerate', async (req, res) => {
   try {
@@ -126,3 +125,5 @@ router.post('/assignments/:id/regenerate', async (req, res) => {
     res.status(500).json({ error: 'Failed to regenerate job' });
   }
 });
+
+export default router;

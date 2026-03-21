@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, Plus, Minus, X, ArrowLeft, ArrowRight } from "lucide-react";
 import { useAssignmentStore } from "@/store/assignmentStore";
+import { toast } from "sonner";
 
 const questionSchema = z.object({
   id: z.string(),
@@ -42,6 +43,11 @@ export default function CreateAssignmentPage() {
   const { startJob } = useAssignmentStore();
   const [step, setStep] = useState(1);
   const [fileData, setFileData] = useState<{ name: string, base64: string, mimeType: string } | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -63,6 +69,13 @@ export default function CreateAssignmentPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selected = e.target.files[0];
+      
+      if (selected.size > 10 * 1024 * 1024) {
+        toast.error("File size must be less than 10MB");
+        e.target.value = '';
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setFileData({
@@ -278,7 +291,7 @@ export default function CreateAssignmentPage() {
             
             <div className="rounded-lg bg-accent p-4 mb-4">
               <h3 className="font-bold text-lg">{watch("topic")}</h3>
-              <p className="text-sm text-muted-foreground mt-1">Due: {new Date(watch("dueDate")).toLocaleDateString()}</p>
+              <p className="text-sm text-muted-foreground mt-1">Due: {isMounted && watch("dueDate") ? new Date(watch("dueDate")).toLocaleDateString() : ''}</p>
             </div>
 
             <div className="space-y-3">

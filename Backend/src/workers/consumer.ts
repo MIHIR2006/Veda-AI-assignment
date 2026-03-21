@@ -67,6 +67,7 @@ const worker = new Worker(
       const result = await model.generateContent(finalPrompt);
       const outputText = result.response.text();
       
+      // lookup this order 
       const paperData = JSON.parse(outputText);
       
       await Assignment.findOneAndUpdate(

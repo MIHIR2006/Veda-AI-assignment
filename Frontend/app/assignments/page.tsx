@@ -13,10 +13,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAssignmentStore, AssignmentData } from "@/store/assignmentStore";
+import { toast } from "sonner";
 
 export default function AssignmentsPage() {
   const router = useRouter();
-  const { assignments, fetchAssignments, loadingAssignments } = useAssignmentStore();
+  const { assignments, fetchAssignments, loadingAssignments, deleteAssignment } = useAssignmentStore();
   const [search, setSearch] = useState("");
   const [isMounted, setIsMounted] = useState(false);
 
@@ -28,6 +29,16 @@ export default function AssignmentsPage() {
   const filtered = assignments.filter((a: AssignmentData) =>
     a.topic?.toLowerCase().includes(search.toLowerCase())
   );
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const success = await deleteAssignment(id);
+    if (success) {
+      toast.success("Assignment deleted successfully");
+    } else {
+      toast.error("Failed to delete assignment");
+    }
+  };
 
   if (loadingAssignments) {
     return (
@@ -108,11 +119,11 @@ export default function AssignmentsPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem className="gap-2" onClick={() => router.push(`/assignments/${assignment._id}`)}>
+                    <DropdownMenuItem className="gap-2" onClick={(e) => { e.stopPropagation(); router.push(`/assignments/${assignment._id}`); }}>
                       <Eye className="h-4 w-4" />
                       View Assignment
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="gap-2 text-destructive">
+                    <DropdownMenuItem className="gap-2 text-destructive" onClick={(e) => handleDelete(e, assignment._id)}>
                       <Trash2 className="h-4 w-4" />
                       Delete
                     </DropdownMenuItem>

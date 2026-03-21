@@ -45,6 +45,7 @@ export type AssignmentState = {
   resetJob: () => void;
   initializeSocket: () => void;
   disconnectSocket: () => void;
+  deleteAssignment: (id: string) => Promise<boolean>;
 };
 
 export const useAssignmentStore = create<AssignmentState>((set, get) => ({
@@ -65,6 +66,20 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
     } catch (error) {
       console.error("Failed to fetch assignments", error);
       set({ loadingAssignments: false });
+    }
+  },
+
+  deleteAssignment: async (id: string) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/assignments/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        set((state) => ({ assignments: state.assignments.filter(a => a._id !== id) }));
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error(err);
+      return false;
     }
   },
 
