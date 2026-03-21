@@ -59,7 +59,7 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
   fetchAssignments: async () => {
     set({ loadingAssignments: true });
     try {
-      const res = await fetch('http://localhost:8080/api/assignments');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/assignments`);
       const data = await res.json();
       set({ assignments: data, loadingAssignments: false });
     } catch (error) {
@@ -92,7 +92,7 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
   initializeSocket: () => {
     if (get().socket) return;
     
-    const socket = io('http://localhost:8080');
+    const socket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080');
     
     socket.on('connect', () => {
       console.log('Socket connected:', socket.id);

@@ -13,9 +13,11 @@ export default function AssignmentResultPage() {
   const id = params?.id as string;
   const router = useRouter();
   const contentRef = useRef<HTMLDivElement>(null);
+  const [assignment, setAssignment] = useState<AssignmentData | null>(null);
+
   const reactToPrintFn = useReactToPrint({ 
     contentRef, 
-    documentTitle: "Assignment_Paper",
+    documentTitle: assignment?.topic ? assignment.topic.replace(/[^a-zA-Z0-9 -]/g, '') : "Assignment_Paper",
     pageStyle: `
       @page {
         size: A4;
@@ -29,14 +31,13 @@ export default function AssignmentResultPage() {
     `
   });
 
-  const [assignment, setAssignment] = useState<AssignmentData | null>(null);
   const { generatedPaper, status, activeJobId, initializeSocket, disconnectSocket, startJob } = useAssignmentStore();
 
   useEffect(() => {
     const fetchIt = async () => {
       if (!id) return;
       try {
-        const res = await fetch(`http://localhost:8080/api/assignments/${id}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/assignments/${id}`);
         if (res.ok) {
           const data = await res.json();
           setAssignment(data);
@@ -62,7 +63,7 @@ export default function AssignmentResultPage() {
 
   const handleRegenerate = async () => {
     try {
-      const res = await fetch(`http://localhost:8080/api/assignments/${id}/regenerate`, { method: 'POST' });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/assignments/${id}/regenerate`, { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
         startJob(data.jobId);
@@ -88,8 +89,8 @@ export default function AssignmentResultPage() {
           </h2>
           
           {!isGenerating && paper && (
-            <div className="flex gap-2">
-              <Button onClick={handleRegenerate} variant="secondary" className="bg-white/10 hover:bg-white/20 text-white border-0">
+            <div className="flex items-center gap-2">
+              <Button onClick={handleRegenerate} variant="secondary" className="h-10 md:h-12 bg-white/10 hover:bg-white/20 text-white border-0 px-6 rounded-full">
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Regenerate
               </Button>

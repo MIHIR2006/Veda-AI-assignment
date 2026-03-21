@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { Queue } from 'bullmq';
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
 import { Assignment } from '../models/Assignment.js';
 
@@ -8,7 +8,7 @@ const router = Router();
 
 const redisConnection = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', { maxRetriesPerRequest: null });
 
-export const paperQueue = new Queue('PaperGenerationQueue', { connection: redisConnection });
+export const paperQueue = new Queue('PaperGenerationQueue', { connection: redisConnection as any });
 
 router.post('/generate-paper', async (req, res) => {
   try {

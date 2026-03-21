@@ -1,5 +1,5 @@
 import { Worker } from 'bullmq';
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { io } from '../index.js';
 import dotenv from 'dotenv';
@@ -91,7 +91,7 @@ const worker = new Worker(
       throw error;
     }
   },
-  { connection: redisConnection }
+  { connection: redisConnection as any }
 );
 
 worker.on('ready', () => {

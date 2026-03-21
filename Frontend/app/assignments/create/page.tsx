@@ -106,7 +106,7 @@ export default function CreateAssignmentPage() {
         payload.mimeType = fileData.mimeType;
       }
 
-      const res = await fetch('http://localhost:8080/api/generate-paper', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/generate-paper`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
