@@ -6,7 +6,7 @@ import { useReactToPrint } from "react-to-print";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { useAssignmentStore, AssignmentData } from "@/store/assignmentStore";
-import { Download, RefreshCw } from "lucide-react";
+import { Download, RefreshCw, FileText, Sparkles } from "lucide-react";
 
 export default function AssignmentResultPage() {
   const params = useParams();
@@ -89,13 +89,27 @@ export default function AssignmentResultPage() {
           </h2>
           
           {!isGenerating && paper && (
-            <div className="flex items-center gap-2">
-              <Button onClick={handleRegenerate} variant="secondary" className="h-10 md:h-12 bg-white/10 hover:bg-white/20 text-white border-0 px-6 rounded-full">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Regenerate
+            <div className="flex flex-wrap items-center gap-4">
+              <Button 
+                onClick={handleDownloadPDF} 
+                className="h-11 px-6 bg-white hover:bg-neutral-100 text-[#1A1A1A] rounded-full flex items-center gap-2 shadow-lg group transition-all border-0"
+              >
+                <div className="relative">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <span className="text-[16px] font-[800] tracking-tight" style={{ fontFamily: 'var(--font-bricolage)' }}>
+                  Download as PDF
+                </span>
               </Button>
-              <Button onClick={handleDownloadPDF} variant="secondary" size="icon" className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-white/10 hover:bg-white/20 text-white border-0">
-                <Download className="h-5 w-5" />
+              
+              <Button 
+                onClick={handleRegenerate} 
+                className="h-11 px-6 bg-white/10 hover:bg-white text-white hover:text-[#1A1A1A] border border-white/20 rounded-full flex items-center gap-2 transition-all shadow-lg border-0 group"
+              >
+                <RefreshCw className="h-4 w-4 group-hover:rotate-180 transition-transform duration-500" />
+                <span className="text-[16px] font-[800] tracking-tight" style={{ fontFamily: 'var(--font-bricolage)' }}>
+                  Regenerate
+                </span>
               </Button>
             </div>
           )}

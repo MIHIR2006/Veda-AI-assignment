@@ -19,6 +19,7 @@ export default function AssignmentsPage() {
   const router = useRouter();
   const { assignments, fetchAssignments, loadingAssignments, deleteAssignment } = useAssignmentStore();
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'dueDate'>('newest');
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -26,9 +27,24 @@ export default function AssignmentsPage() {
     fetchAssignments();
   }, [fetchAssignments]);
 
-  const filtered = assignments.filter((a: AssignmentData) =>
-    a.topic?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = assignments
+    .filter((a: AssignmentData) =>
+      a.topic?.toLowerCase().includes(search.toLowerCase())
+    )
+    .sort((a: AssignmentData, b: AssignmentData) => {
+      if (sortBy === 'newest') {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      if (sortBy === 'oldest') {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+      if (sortBy === 'dueDate') {
+        const dateA = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+        const dateB = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+        return dateA - dateB;
+      }
+      return 0;
+    });
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -54,8 +70,14 @@ export default function AssignmentsPage() {
     return (
       <AppLayout title="Assignment" showBack onBack={() => router.push("/")}>
         <div className="flex flex-1 flex-col items-center justify-center py-24 animate-fade-in">
-          <div className="mb-6 h-40 w-40 rounded-full bg-accent flex items-center justify-center">
-            <Search className="h-16 w-16 text-muted-foreground/40" />
+          <div className="mb-6 h-40 w-40 flex items-center justify-center relative">
+            <div className="absolute inset-0 bg-neutral-200/50 rounded-full blur-3xl opacity-50" />
+            <div 
+              className="h-32 w-32 rounded-full bg-white flex items-center justify-center shadow-inner"
+              style={{ maskImage: 'radial-gradient(circle, black 60%, transparent 100%)', WebkitMaskImage: 'radial-gradient(circle, black 60%, transparent 100%)' }}
+            >
+              <Search className="h-12 w-12 text-muted-foreground/20" />
+            </div>
           </div>
           <h2 className="text-xl font-bold mb-2">No assignments yet</h2>
           <p className="text-sm text-muted-foreground text-center max-w-md mb-8">
@@ -85,18 +107,28 @@ export default function AssignmentsPage() {
           </p>
         </div>
 
-        <div className="flex items-center justify-between mb-6 gap-4">
-          <Button variant="ghost" className="gap-2 text-muted-foreground">
-            <Filter className="h-4 w-4" />
-            Filter By
-          </Button>
-          <div className="relative w-full max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="bg-white rounded-[24px] p-2 border border-neutral-100 shadow-sm flex items-center justify-between mb-8">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="gap-2 text-muted-foreground hover:bg-neutral-50 px-4">
+                <Filter className="h-4 w-4 text-muted-foreground/60" />
+                <span className="text-sm font-medium">Filter By</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onClick={() => setSortBy('newest')}>Newest First</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy('oldest')}>Oldest First</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy('dueDate')}>By Due Date</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <div className="relative w-full max-w-sm mr-2">
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/50" />
             <Input
               placeholder="Search Assignment"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 bg-card"
+              className="pl-10 h-10 bg-white border-neutral-200 rounded-full focus-visible:ring-primary/20 text-sm"
             />
           </div>
         </div>
@@ -106,49 +138,50 @@ export default function AssignmentsPage() {
             <div
               key={assignment._id}
               onClick={() => router.push(`/assignments/${assignment._id}`)}
-              className="rounded-xl border border-border bg-card p-5 hover:shadow-md transition-all cursor-pointer group"
+              className="rounded-[24px] border border-neutral-100 bg-card p-5 md:p-8 hover:shadow-lg transition-all cursor-pointer group flex flex-col justify-between min-h-[116px] md:min-h-[162px]"
             >
-              <div className="flex items-start justify-between mb-8">
-                <h3 className="text-lg font-bold underline decoration-1 underline-offset-2 capitalize">
+              <div className="flex items-start justify-between">
+                <h3 className="text-[24px] font-[800] tracking-[-0.04em] leading-[1.2] text-foreground/90 capitalize" style={{ fontFamily: 'var(--font-bricolage)' }}>
                   {assignment.topic || 'Untitled Assignment'}
                 </h3>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 -mt-1" onClick={(e) => e.stopPropagation()}>
-                      <MoreVertical className="h-5 w-5" />
+                    <Button variant="ghost" size="icon" className="h-10 w-10 -mr-2 -mt-1 text-muted-foreground/80 hover:text-foreground" onClick={(e) => e.stopPropagation()}>
+                      <MoreVertical className="h-8 w-8" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem className="gap-2" onClick={(e) => { e.stopPropagation(); router.push(`/assignments/${assignment._id}`); }}>
+                  <DropdownMenuContent align="end" className="rounded-xl">
+                    <DropdownMenuItem className="gap-2 font-medium" onClick={(e) => { e.stopPropagation(); router.push(`/assignments/${assignment._id}`); }}>
                       <Eye className="h-4 w-4" />
                       View Assignment
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="gap-2 text-destructive" onClick={(e) => handleDelete(e, assignment._id)}>
+                    <DropdownMenuItem className="gap-2 text-destructive font-medium" onClick={(e) => handleDelete(e, assignment._id)}>
                       <Trash2 className="h-4 w-4" />
                       Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>
-                  <span className="font-semibold text-foreground">Assigned on</span> : {isMounted ? new Date(assignment.createdAt).toLocaleDateString() : ''}
+              <div className="flex items-center justify-between text-[13.5px] mt-auto">
+                <span className="text-muted-foreground/70">
+                  <span className="font-bold text-foreground">Assigned on</span> : {isMounted ? new Date(assignment.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') : ''}
                 </span>
                 {assignment.dueDate && (
-                  <span>
-                    <span className="font-semibold text-foreground">Due</span> : {isMounted ? new Date(assignment.dueDate).toLocaleDateString() : ''}
+                  <span className="text-muted-foreground/70">
+                    <span className="font-bold text-foreground">Due</span> : {isMounted ? new Date(assignment.dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') : ''}
                   </span>
                 )}
-                <span className="px-2 py-1 rounded-full text-xs font-semibold bg-neutral-100 text-neutral-800">
-                  {assignment.status}
-                </span>
               </div>
             </div>
           ))}
         </div>
 
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:right-8 z-50">
-          <Button variant="dark" size="lg" onClick={() => router.push("/assignments/create")} className="gap-2 shadow-lg">
+        <div className="sticky bottom-8 z-50 mt-14 flex justify-center">
+          <Button 
+            variant="dark" 
+            onClick={() => router.push("/assignments/create")} 
+            className="w-[208px] h-[46px] gap-1 shadow-2xl rounded-full border-[1.5px] border-zinc-700 font-bold"
+          >
             <Plus className="h-5 w-5" />
             Create Assignment
           </Button>

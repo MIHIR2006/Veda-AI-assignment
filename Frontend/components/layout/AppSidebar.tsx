@@ -2,25 +2,35 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, MessageSquare, ClipboardList, Monitor, Clock, Settings, Sparkles } from "lucide-react";
+import { LayoutGrid, MessageSquare, ClipboardList, Book, ChartPie, Settings, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
-const navItems = [
-  { label: "Home", icon: LayoutGrid, path: "/" },
-  { label: "My Groups", icon: MessageSquare, path: "/groups" },
-  { label: "Assignments", icon: ClipboardList, path: "/assignments", badge: 10 },
-  { label: "AI Teacher's Toolkit", icon: Monitor, path: "/toolkit" },
-  { label: "My Library", icon: Clock, path: "/library" },
-];
+import { useAssignmentStore } from "@/store/assignmentStore";
+import { useEffect } from "react";
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { assignments, fetchAssignments } = useAssignmentStore();
+
+  useEffect(() => {
+    if (assignments.length === 0) {
+      fetchAssignments();
+    }
+  }, [fetchAssignments, assignments.length]);
+
+  const navItems = [
+    { label: "Home", icon: LayoutGrid, path: "/" },
+    { label: "My Groups", icon: MessageSquare, path: "/groups" },
+    { label: "Assignments", icon: ClipboardList, path: "/assignments", badge: assignments.length > 0 ? assignments.length : null },
+    { label: "AI Teacher's Toolkit", icon: Book, path: "/toolkit" },
+    { label: "My Library", icon: ChartPie, path: "/library" },
+  ];
 
   return (
-    <aside className="hidden md:flex w-[280px] shrink-0 flex-col border-r border-border bg-card">
+    <aside className="hidden lg:flex w-[270px] shrink-0 sticky top-3 md:top-4 self-start flex-col h-[calc(100vh-24px)] md:h-[calc(100vh-32px)] border border-border bg-white rounded-[24px] shadow-sm overflow-hidden">
       <div className="flex items-center gap-2 px-5 py-5">
         <Image
           src="/assets/veda-logo.png"
@@ -43,8 +53,7 @@ export function AppSidebar() {
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3">
+      <nav className="flex-1 space-y-2 px-4 py-4">
         {navItems.map((item) => {
           const isActive = pathname === item.path || 
             (item.path !== "/" && pathname.startsWith(item.path));
@@ -53,16 +62,16 @@ export function AppSidebar() {
               key={item.path}
               href={item.path}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition-all",
                 isActive
-                  ? "bg-accent text-foreground font-semibold"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                  ? "bg-neutral-100/80 text-foreground ring-1 ring-neutral-200/50 shadow-sm"
+                  : "text-muted-foreground hover:bg-neutral-50 hover:text-foreground"
               )}
             >
-              <item.icon className="h-5 w-5" />
+              <item.icon className={cn("h-5 w-5", isActive ? "text-foreground" : "text-muted-foreground/70")} />
               {item.label}
               {item.badge && (
-                <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-bold text-primary-foreground">
+                <span className="ml-auto flex h-5 min-w-[32px] items-center justify-center rounded-full bg-[#E97441] px-2 text-[11px] font-black text-white shadow-sm">
                   {item.badge}
                 </span>
               )}
@@ -71,24 +80,24 @@ export function AppSidebar() {
         })}
       </nav>
 
-      <div className="border-t border-border p-3">
+      <div className="px-4 py-2">
         <Link
           href="/settings"
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-muted-foreground hover:bg-neutral-50 hover:text-foreground transition-all"
         >
-          <Settings className="h-5 w-5" />
+          <Settings className="h-5 w-5 text-muted-foreground/70" />
           Settings
         </Link>
       </div>
 
-      <div className="border-t border-border p-4">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10">
-            <AvatarFallback className="bg-accent text-foreground text-xs font-bold">DP</AvatarFallback>
+      <div className="p-4 mt-auto">
+        <div className="flex items-center gap-3 bg-neutral-100 p-3 rounded-[20px] border border-neutral-200/50 shadow-sm">
+          <Avatar className="h-12 w-12 rounded-full border-2 border-white shadow-sm">
+            <AvatarFallback className="bg-[#F5E6DA] text-[#8B5E3C] text-xs font-black">DP</AvatarFallback>
           </Avatar>
-          <div>
-            <p className="text-sm font-semibold">Delhi Public School</p>
-            <p className="text-xs text-muted-foreground">Bokaro Steel City</p>
+          <div className="min-w-0">
+            <p className="text-sm font-black text-foreground truncate">Delhi Public School</p>
+            <p className="text-[11px] text-muted-foreground/80 truncate font-bold">Bokaro Steel City</p>
           </div>
         </div>
       </div>

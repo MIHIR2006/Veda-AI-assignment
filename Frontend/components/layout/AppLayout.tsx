@@ -11,13 +11,15 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, title, showBack, onBack }: AppLayoutProps) {
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      <AppSidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <TopBar title={title} showBack={showBack} onBack={onBack} />
-        <main className="flex-1 overflow-y-auto p-6 scrollbar-thin">
-          {children}
-        </main>
+    <div className="min-h-screen bg-zinc-100/50 p-2 md:p-3 lg:p-4">
+      <div className="mx-auto flex max-w-[1600px] gap-4">
+        <AppSidebar />
+        <div className="flex flex-1 flex-col">
+          <TopBar title={title} showBack={showBack} onBack={onBack} />
+          <main className="flex-1 px-2 md:px-4">
+            {children}
+          </main>
+        </div>
       </div>
     </div>
   );

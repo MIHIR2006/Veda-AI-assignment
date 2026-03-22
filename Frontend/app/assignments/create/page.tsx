@@ -180,10 +180,13 @@ export default function CreateAssignmentPage() {
         </div>
 
         {step === 1 && (
-          <div className="rounded-2xl border border-border bg-card p-6 md:p-8 space-y-6">
+          <div 
+            className="rounded-[24px] border border-neutral-100 bg-card p-6 md:p-8 space-y-6 shadow-sm"
+            style={{ fontFamily: 'var(--font-bricolage)' }}
+          >
             <div>
-              <h2 className="text-xl font-bold mb-1">Assignment Details</h2>
-              <p className="text-sm text-muted-foreground">Basic information about your assignment</p>
+              <h2 className="text-[24px] font-[800] tracking-tight mb-1">Assignment Details</h2>
+              <p className="text-sm font-semibold text-muted-foreground/70">Basic information about your assignment</p>
             </div>
 
             {/* File Upload */}
@@ -212,63 +215,67 @@ export default function CreateAssignmentPage() {
                 </>
               )}
             </div>
-            <p className="text-xs text-muted-foreground text-center -mt-3">
+            <p className="text-sm font-bold text-muted-foreground/80 text-center -mt-3">
               Upload images or PDF of your preferred document (optional)
             </p>
 
-            <div>
-              {/* Topic */}
-              <label className="text-sm font-bold mb-2 block">
-                Topic / Title <span className="text-destructive">*</span>
-              </label>
-              <Input placeholder="E.g., CBSE Grade 8 Science" {...register("topic")} className="bg-card mb-1" />
-              {errors.topic && <p className="text-red-500 text-xs mb-3">{errors.topic.message}</p>}
+            <div className="space-y-5">
+              <div>
+                <label className="text-sm font-[800] tracking-tight mb-2 block text-foreground/80">
+                  Topic / Title <span className="text-destructive">*</span>
+                </label>
+                <Input placeholder="E.g., CBSE Grade 8 Science" {...register("topic")} className="bg-card font-semibold h-12 rounded-xl border-neutral-200" />
+                {errors.topic && <p className="text-red-500 text-xs mt-1">{errors.topic.message}</p>}
+              </div>
 
-              <label className="text-sm font-bold mb-2 mt-4 block">
-                Due Date <span className="text-destructive">*</span>
-              </label>
-              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal bg-card",
-                      !selectedDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 rounded-[1.5rem] shadow-[0_14px_45px_rgba(15,23,42,0.15)] border border-border" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={handleDateSelect}
-                    disabled={(date) => (today ? date < today : false)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              {errors.dueDate && <p className="text-red-500 text-xs mt-1 mb-3">{errors.dueDate.message}</p>}
+              <div>
+                <label className="text-sm font-[800] tracking-tight mb-2 block text-foreground/80">
+                  Due Date <span className="text-destructive">*</span>
+                </label>
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={cn(
+                        "w-full h-12 justify-start text-left font-semibold bg-card rounded-xl border-neutral-200",
+                        !selectedDate && "text-muted-foreground/60"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 rounded-[24px] shadow-xl border border-neutral-200" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={handleDateSelect}
+                      disabled={(date) => (today ? date < today : false)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                {errors.dueDate && <p className="text-red-500 text-xs mt-1">{errors.dueDate.message}</p>}
+              </div>
 
-              {/* Instructions */}
-              <label className="text-sm font-bold mb-2 mt-4 block">Additional Instructions</label>
-              <Input placeholder="E.g., Provide hints for each question , Time Allowed 1 hour" {...register("instructions")} className="bg-card mb-1" />
-              {errors.instructions && <p className="text-red-500 text-xs mb-3">{errors.instructions.message}</p>}
+              <div>
+                <label className="text-sm font-[800] tracking-tight mb-2 block text-foreground/80">Additional Instructions</label>
+                <Input placeholder="E.g., Provide hints for each question , Time Allowed 1 hour" {...register("instructions")} className="bg-card font-semibold h-12 rounded-xl border-neutral-200" />
+                {errors.instructions && <p className="text-red-500 text-xs mt-1">{errors.instructions.message}</p>}
+              </div>
             </div>
 
             {/* Questions Table */}
             <div>
-              <div className="grid grid-cols-[1fr_auto_auto] gap-4 items-center mb-3">
-                <label className="text-sm font-bold">Question Type</label>
-                <span className="text-sm font-bold text-center">No. of Questions</span>
-                <span className="text-sm font-bold text-center">Marks</span>
+              <div className="flex items-center gap-4 mb-4 pr-2">
+                <label className="flex-1 text-sm font-[800] tracking-tight text-foreground/80">Question Type</label>
+                <div className="w-[120px] text-center text-sm font-[800] tracking-tight text-foreground/80">No. of Questions</div>
+                <div className="w-[100px] text-center text-sm font-[800] tracking-tight text-foreground/80">Marks</div>
               </div>
               {questions.map((q) => (
-                <div key={q.id} className="grid grid-cols-[1fr_auto_auto] gap-4 items-center mb-3">
-                  <div className="flex items-center gap-2">
+                <div key={q.id} className="flex items-center gap-4 mb-3 pr-2">
+                  <div className="flex-1 flex items-center gap-2">
                     <Select value={q.type} onValueChange={(val) => updateRow(q.id, "type", val)}>
                       <SelectTrigger className="bg-card">
                         <SelectValue />
@@ -279,39 +286,54 @@ export default function CreateAssignmentPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <button type="button" onClick={() => removeRow(q.id)} className="text-muted-foreground hover:text-destructive">
+                    <button type="button" onClick={() => removeRow(q.id)} className="text-muted-foreground/40 hover:text-destructive flex-shrink-0">
                       <X className="h-4 w-4" />
                     </button>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateRow(q.id, "count", Math.max(1, q.count - 1))}>
+                  
+                  <div className="w-[120px] flex items-center justify-center gap-1">
+                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-neutral-100" onClick={() => updateRow(q.id, "count", Math.max(1, q.count - 1))}>
                       <Minus className="h-3 w-3" />
                     </Button>
-                    <span className="w-8 text-center text-sm font-medium">{q.count}</span>
-                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateRow(q.id, "count", q.count + 1)}>
+                    <span className="w-8 text-center text-sm font-black leading-none">{q.count}</span>
+                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-neutral-100" onClick={() => updateRow(q.id, "count", q.count + 1)}>
                       <Plus className="h-3 w-3" />
                     </Button>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateRow(q.id, "marks", Math.max(1, q.marks - 1))}>
+                  
+                  <div className="w-[100px] flex items-center justify-center gap-1">
+                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-neutral-100" onClick={() => updateRow(q.id, "marks", Math.max(1, q.marks - 1))}>
                       <Minus className="h-3 w-3" />
                     </Button>
-                    <span className="w-8 text-center text-sm font-medium">{q.marks}</span>
-                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateRow(q.id, "marks", q.marks + 1)}>
+                    <span className="w-8 text-center text-sm font-black leading-none">{q.marks}</span>
+                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-neutral-100" onClick={() => updateRow(q.id, "marks", q.marks + 1)}>
                       <Plus className="h-3 w-3" />
                     </Button>
                   </div>
                 </div>
               ))}
-              <div className="flex flex-col items-end gap-1 mt-4 text-sm font-semibold text-muted-foreground pr-2">
-                <p>Total Questions : <span className="text-foreground">{questions.reduce((sum, q) => sum + q.count, 0)}</span></p>
-                <p>Total Marks : <span className="text-foreground">{questions.reduce((sum, q) => sum + (q.count * q.marks), 0)}</span></p>
-              </div>
+              <div className="flex items-start justify-between mt-10 pr-2">
+                <button 
+                  type="button" 
+                  onClick={addQuestionRow} 
+                  className="flex items-center gap-3 group transition-all"
+                >
+                  <div className="h-10 w-10 rounded-full bg-[#1A1A1A] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
+                    <Plus className="h-5 w-5 stroke-[2.5]" />
+                  </div>
+                  <span 
+                    className="text-[20px] font-[800] tracking-tight text-foreground/90 pt-0.5"
+                    style={{ fontFamily: 'var(--font-bricolage)' }}
+                  >
+                    Add Question Type
+                  </span>
+                </button>
 
-              <Button type="button" variant="ghost" size="sm" onClick={addQuestionRow} className="gap-1 text-primary mt-2">
-                <Plus className="h-4 w-4" />
-                Add Question Type
-              </Button>
+                <div className="flex flex-col items-end gap-0.5 text-sm font-semibold text-muted-foreground">
+                  <p>Total Questions : <span className="text-foreground">{questions.reduce((sum, q) => sum + q.count, 0)}</span></p>
+                  <p>Total Marks : <span className="text-foreground">{questions.reduce((sum, q) => sum + (q.count * q.marks), 0)}</span></p>
+                </div>
+              </div>
             </div>
           </div>
         )}
