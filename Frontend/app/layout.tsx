@@ -20,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${dmSans.variable} font-sans antialiased min-h-screen`}>
+      <body className={`${dmSans.variable} font-sans antialiased min-h-screen`} suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
     </html>

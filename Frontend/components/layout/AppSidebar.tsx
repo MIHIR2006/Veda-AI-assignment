@@ -27,7 +27,7 @@ export function AppSidebar() {
           alt="VedaAI"
           width={36}
           height={36}
-          className="h-auto w-9"
+          className="h-9 w-9"
         />
         <span className="text-xl font-bold tracking-tight">VedaAI</span>
       </div>
