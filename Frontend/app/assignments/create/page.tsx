@@ -9,7 +9,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Upload, Plus, Minus, X, ArrowLeft, ArrowRight, CalendarIcon } from "lucide-react";
 import { useAssignmentStore } from "@/store/assignmentStore";
@@ -41,6 +41,10 @@ const questionTypes = [
   "Fill in the Blanks",
   "True/False",
 ];
+
+const Popover = PopoverPrimitive.Root;
+const PopoverTrigger = PopoverPrimitive.Trigger;
+const PopoverContent = PopoverPrimitive.Content;
 
 export default function CreateAssignmentPage() {
   const router = useRouter();
@@ -313,7 +317,6 @@ export default function CreateAssignmentPage() {
 
             <div className="rounded-lg bg-accent p-4 mb-4">
               <h3 className="font-bold text-lg">{watch("topic")}</h3>
-              {/* ✅ Use selectedDate directly instead of re-parsing the string */}
               <p className="text-sm text-muted-foreground mt-1">
                 Due: {isMounted && selectedDate ? format(selectedDate, "PPP") : "—"}
               </p>
