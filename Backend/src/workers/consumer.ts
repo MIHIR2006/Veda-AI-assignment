@@ -56,10 +56,10 @@ const worker = new Worker(
       let finalPrompt: any = prompt;
       
       if (imageBase64 && mimeType) {
-        const base64DataStr = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+        const base64DataStr = imageBase64.replace(/^data:.*;base64,/, "");
         
         finalPrompt = [
-          prompt + "\n\nCRITICAL: Please strictly use the attached lesson notes image as context to generate your questions.",
+          prompt + "\n\nCRITICAL: Please strictly use the attached lesson notes (image or PDF) as context to generate your questions.",
           { inlineData: { data: base64DataStr, mimeType } }
         ];
       }

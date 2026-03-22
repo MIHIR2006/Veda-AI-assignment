@@ -190,10 +190,10 @@ export default function CreateAssignmentPage() {
             <div className="border-2 border-dashed border-border rounded-xl p-8 flex flex-col items-center justify-center text-center relative overflow-hidden group">
               <input
                 type="file"
-                accept="image/png, image/jpeg"
+                accept="image/png, image/jpeg, application/pdf"
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 onChange={handleFileChange}
-                title="Upload lesson notes"
+                title="Upload lesson notes (PDF or Image)"
               />
               <Upload className={`h-10 w-10 mb-3 ${fileData ? "text-primary" : "text-muted-foreground"}`} />
               {fileData ? (
@@ -207,13 +207,13 @@ export default function CreateAssignmentPage() {
               ) : (
                 <>
                   <p className="text-sm font-medium mb-1">Choose a file or drag & drop it here</p>
-                  <p className="text-xs text-muted-foreground mb-3">JPEG, PNG, up to 10MB</p>
+                  <p className="text-xs text-muted-foreground mb-3">JPEG, PNG, PDF up to 10MB</p>
                   <Button type="button" variant="outline" size="sm">Browse Files</Button>
                 </>
               )}
             </div>
             <p className="text-xs text-muted-foreground text-center -mt-3">
-              Upload images of your preferred document/image (optional)
+              Upload images or PDF of your preferred document (optional)
             </p>
 
             <div>
@@ -255,7 +255,7 @@ export default function CreateAssignmentPage() {
 
               {/* Instructions */}
               <label className="text-sm font-bold mb-2 mt-4 block">Additional Instructions</label>
-              <Input placeholder="E.g., Provide hints for each question" {...register("instructions")} className="bg-card mb-1" />
+              <Input placeholder="E.g., Provide hints for each question , Time Allowed 1 hour" {...register("instructions")} className="bg-card mb-1" />
               {errors.instructions && <p className="text-red-500 text-xs mb-3">{errors.instructions.message}</p>}
             </div>
 
@@ -303,6 +303,11 @@ export default function CreateAssignmentPage() {
                   </div>
                 </div>
               ))}
+              <div className="flex flex-col items-end gap-1 mt-4 text-sm font-semibold text-muted-foreground pr-2">
+                <p>Total Questions : <span className="text-foreground">{questions.reduce((sum, q) => sum + q.count, 0)}</span></p>
+                <p>Total Marks : <span className="text-foreground">{questions.reduce((sum, q) => sum + (q.count * q.marks), 0)}</span></p>
+              </div>
+
               <Button type="button" variant="ghost" size="sm" onClick={addQuestionRow} className="gap-1 text-primary mt-2">
                 <Plus className="h-4 w-4" />
                 Add Question Type
