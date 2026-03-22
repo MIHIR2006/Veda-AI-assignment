@@ -1,8 +1,15 @@
 "use client";
 
-import { ArrowLeft, Bell, ChevronDown, LayoutGrid, ClipboardList, MessageSquare, Book, ChartPie } from "lucide-react";
+import { ArrowLeft, ChevronDown, LayoutGrid, ClipboardList, MessageSquare, Book, ChartPie, Settings, Github, Globe, Linkedin, ExternalLink } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface TopBarProps {
   title?: string;
@@ -17,8 +24,15 @@ const getIconForTitle = (title: string) => {
   if (t.includes('group')) return MessageSquare;
   if (t.includes('toolkit')) return Book;
   if (t.includes('library')) return ChartPie;
+  if (t.includes('setting')) return Settings;
   return LayoutGrid;
 };
+
+const socialLinks = [
+  { label: "GitHub", icon: Github, url: "https://github.com/MIHIR2006", color: "text-zinc-800" },
+  { label: "Portfolio", icon: Globe, url: "https://mihirgoswami.is-a.dev", color: "text-violet-600" },
+  { label: "LinkedIn", icon: Linkedin, url: "https://www.linkedin.com/in/mihir-goswami/", color: "text-blue-600" },
+];
 
 export function TopBar({ title, showBack, onBack }: TopBarProps) {
   const displayTitle = title || "Home";
@@ -40,19 +54,45 @@ export function TopBar({ title, showBack, onBack }: TopBarProps) {
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-full hover:bg-neutral-100">
-          <Bell className="h-6 w-6 text-muted-foreground/80" />
-          <span className="absolute right-[10px] top-[10px] h-2.5 w-2.5 rounded-full border-2 border-white bg-primary shadow-sm" />
-        </Button>
-        <div className="flex items-center gap-2 cursor-pointer bg-neutral-100 py-1.5 pl-1.5 pr-3 rounded-full hover:bg-neutral-200/70 transition-colors">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-zinc-800 text-zinc-100 text-xs shadow-sm">MG</AvatarFallback>
-          </Avatar>
-          <div className="flex items-center gap-1.5 min-w-0">
-            <span className="text-xs font-bold hidden sm:block truncate">Mihir Goswami</span>
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          </div>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <div className="flex items-center gap-2 cursor-pointer bg-neutral-100 py-1.5 pl-1.5 pr-3 rounded-full hover:bg-neutral-200/70 transition-colors">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-zinc-800 text-zinc-100 text-xs shadow-sm">MG</AvatarFallback>
+              </Avatar>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="text-xs font-bold hidden sm:block truncate">Mihir Goswami</span>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </div>
+            </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56 rounded-xl p-2">
+            <div className="px-3 py-2 mb-1">
+              <p className="text-sm font-bold text-foreground">Mihir Goswami</p>
+              <p className="text-xs text-muted-foreground/60 font-medium">mihirgoswami2006@gmail.com</p>
+            </div>
+            <DropdownMenuSeparator />
+            {socialLinks.map((link) => (
+              <DropdownMenuItem 
+                key={link.label} 
+                className="gap-3 font-semibold cursor-pointer rounded-lg py-2.5" 
+                onClick={() => window.open(link.url, '_blank')}
+              >
+                <link.icon className={`h-4 w-4 ${link.color}`} />
+                {link.label}
+                <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground/40" />
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              className="gap-3 font-semibold cursor-pointer rounded-lg py-2.5"
+              onClick={() => window.location.href = '/settings'}
+            >
+              <Settings className="h-4 w-4 text-muted-foreground/70" />
+              Settings
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );
