@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { ServerWarmup } from "@/components/ServerWarmup";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -21,7 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${dmSans.variable} font-sans antialiased min-h-screen`} suppressHydrationWarning>
-        <Providers>{children}</Providers>
+        <Providers>
+          <ServerWarmup />
+          {children}
+        </Providers>
       </body>
     </html>
   );

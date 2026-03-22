@@ -10,6 +10,10 @@ const redisConnection = new Redis(process.env.REDIS_URL || 'redis://localhost:63
 
 export const paperQueue = new Queue('PaperGenerationQueue', { connection: redisConnection as any });
 
+router.get('/health', (_req, res) => {
+  res.json({ status: 'ok' });
+});
+
 router.post('/generate-paper', async (req, res) => {
   try {
     const { topic, marks, difficulty, questionTypes, instructions, imageBase64, mimeType, dueDate } = req.body;

@@ -50,9 +50,9 @@ export default function CreateAssignmentPage() {
   const router = useRouter();
   const { startJob } = useAssignmentStore();
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [fileData, setFileData] = useState<{ name: string; base64: string; mimeType: string } | null>(null);
   const [isMounted, setIsMounted] = useState(false);
-  // ✅ New: calendar date state + popover open state
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [today, setToday] = useState<Date | null>(null);
@@ -81,7 +81,6 @@ export default function CreateAssignmentPage() {
   const { register, watch, setValue, trigger, formState: { errors } } = form;
   const questions = watch("questions");
 
-  // ✅ Sync the shadcn Calendar selection into react-hook-form's dueDate field
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date);
     setValue("dueDate", date ? format(date, "yyyy-MM-dd") : "", { shouldValidate: true });
@@ -126,6 +125,8 @@ export default function CreateAssignmentPage() {
   };
 
   const submitAssignment = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       const payload: any = {
         topic: watch("topic") || "General Science",
@@ -152,10 +153,13 @@ export default function CreateAssignmentPage() {
         startJob(data.jobId);
         router.push(`/assignments/${data.assignmentId}`);
       } else {
-        console.error("Failed to generate");
+        toast.error("Failed to generate assignment");
+        setIsSubmitting(false);
       }
     } catch (err) {
       console.error(err);
+      toast.error("Server is waking up, please try again");
+      setIsSubmitting(false);
     }
   };
 
@@ -220,7 +224,6 @@ export default function CreateAssignmentPage() {
               <Input placeholder="E.g., CBSE Grade 8 Science" {...register("topic")} className="bg-card mb-1" />
               {errors.topic && <p className="text-red-500 text-xs mb-3">{errors.topic.message}</p>}
 
-              {/* ✅ Due Date — replaced <Input type="date"> with shadcn Calendar in a Popover */}
               <label className="text-sm font-bold mb-2 mt-4 block">
                 Due Date <span className="text-destructive">*</span>
               </label>
@@ -355,6 +358,7 @@ export default function CreateAssignmentPage() {
             type="button"
             variant="dark"
             size="lg"
+            disabled={isSubmitting && step === 2}
             onClick={async () => {
               if (step === 1) {
                 const isValid = await trigger(["topic", "dueDate", "questions"]);
@@ -365,8 +369,9 @@ export default function CreateAssignmentPage() {
             }}
             className="gap-2"
           >
-            {step === 1 ? "Next" : "Create Assignment"}
-            <ArrowRight className="h-4 w-4" />
+            {step === 1 ? "Next" : isSubmitting ? "Creating..." : "Create Assignment"}
+            {!isSubmitting && <ArrowRight className="h-4 w-4" />}
+            {isSubmitting && step === 2 && <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
           </Button>
         </div>
       </div>
