@@ -22,6 +22,8 @@ export function EmptyState({ title, description, buttonText, buttonPath }: Empty
           src="/assets/no-assignments-illustration.png"
           alt={title}
           fill
+          loading="eager"
+          priority
           className="object-contain [mask-image:radial-gradient(ellipse_at_center,black_50%,transparent_100%)]"
         />
       </div>

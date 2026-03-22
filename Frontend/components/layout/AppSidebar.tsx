@@ -21,13 +21,17 @@ export function AppSidebar() {
 
   return (
     <aside className="hidden md:flex w-[280px] shrink-0 flex-col border-r border-border bg-card">
-      {/* Logo */}
       <div className="flex items-center gap-2 px-5 py-5">
-        <Image src="/assets/veda-logo.png" alt="VedaAI" width={36} height={36} />
+        <Image
+          src="/assets/veda-logo.png"
+          alt="VedaAI"
+          width={36}
+          height={36}
+          className="h-auto w-9"
+        />
         <span className="text-xl font-bold tracking-tight">VedaAI</span>
       </div>
 
-      {/* Create Assignment CTA */}
       <div className="px-4 pb-4">
         <div className="rounded-full bg-primary p-[3px] shadow-md">
           <Button variant="dark" size="lg" className="w-full gap-2 text-base font-semibold rounded-full" asChild>
@@ -67,7 +71,6 @@ export function AppSidebar() {
         })}
       </nav>
 
-      {/* Bottom */}
       <div className="border-t border-border p-3">
         <Link
           href="/settings"
@@ -78,7 +81,6 @@ export function AppSidebar() {
         </Link>
       </div>
 
-      {/* School Info */}
       <div className="border-t border-border p-4">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">

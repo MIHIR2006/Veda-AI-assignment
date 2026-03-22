@@ -9,9 +9,13 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Plus, Minus, X, ArrowLeft, ArrowRight } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Upload, Plus, Minus, X, ArrowLeft, ArrowRight, CalendarIcon } from "lucide-react";
 import { useAssignmentStore } from "@/store/assignmentStore";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const questionSchema = z.object({
   id: z.string(),
@@ -42,11 +46,18 @@ export default function CreateAssignmentPage() {
   const router = useRouter();
   const { startJob } = useAssignmentStore();
   const [step, setStep] = useState(1);
-  const [fileData, setFileData] = useState<{ name: string, base64: string, mimeType: string } | null>(null);
+  const [fileData, setFileData] = useState<{ name: string; base64: string; mimeType: string } | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  // ✅ New: calendar date state + popover open state
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [today, setToday] = useState<Date | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+    setToday(currentDate);
   }, []);
 
   const form = useForm<FormValues>({
@@ -59,20 +70,27 @@ export default function CreateAssignmentPage() {
         { id: "1", type: "Multiple Choice Questions", count: 4, marks: 1 },
         { id: "2", type: "Short Questions", count: 3, marks: 2 },
         { id: "3", type: "Diagram/Graph-Based Questions", count: 5, marks: 5 },
-      ]
-    }
+      ],
+    },
   });
 
   const { register, watch, setValue, trigger, formState: { errors } } = form;
   const questions = watch("questions");
 
+  // ✅ Sync the shadcn Calendar selection into react-hook-form's dueDate field
+  const handleDateSelect = (date: Date | undefined) => {
+    setSelectedDate(date);
+    setValue("dueDate", date ? format(date, "yyyy-MM-dd") : "", { shouldValidate: true });
+    setCalendarOpen(false);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selected = e.target.files[0];
-      
+
       if (selected.size > 10 * 1024 * 1024) {
         toast.error("File size must be less than 10MB");
-        e.target.value = '';
+        e.target.value = "";
         return;
       }
 
@@ -81,7 +99,7 @@ export default function CreateAssignmentPage() {
         setFileData({
           name: selected.name,
           base64: reader.result as string,
-          mimeType: selected.type
+          mimeType: selected.type,
         });
       };
       reader.readAsDataURL(selected);
@@ -109,22 +127,22 @@ export default function CreateAssignmentPage() {
         topic: watch("topic") || "General Science",
         marks: questions.reduce((s, q) => s + q.count * q.marks, 0),
         difficulty: "Medium",
-        questionTypes: questions.map(q => q.type),
+        questionTypes: questions.map((q) => q.type),
         instructions: watch("instructions"),
-        dueDate: watch("dueDate")
+        dueDate: watch("dueDate"),
       };
-      
+
       if (fileData) {
         payload.imageBase64 = fileData.base64;
         payload.mimeType = fileData.mimeType;
       }
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/generate-paper`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/generate-paper`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
-      
+
       if (res.ok) {
         const data = await res.json();
         startJob(data.jobId);
@@ -145,9 +163,7 @@ export default function CreateAssignmentPage() {
             <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
             <h1 className="text-2xl font-bold">Create Assignment</h1>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Set up a new assignment for your students
-          </p>
+          <p className="text-sm text-muted-foreground">Set up a new assignment for your students</p>
         </div>
 
         <div className="flex gap-2 mb-8">
@@ -162,26 +178,28 @@ export default function CreateAssignmentPage() {
               <p className="text-sm text-muted-foreground">Basic information about your assignment</p>
             </div>
 
+            {/* File Upload */}
             <div className="border-2 border-dashed border-border rounded-xl p-8 flex flex-col items-center justify-center text-center relative overflow-hidden group">
-              <input 
-                type="file" 
-                accept="image/png, image/jpeg" 
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+              <input
+                type="file"
+                accept="image/png, image/jpeg"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 onChange={handleFileChange}
                 title="Upload lesson notes"
               />
-              <Upload className={`h-10 w-10 mb-3 ${fileData ? 'text-primary' : 'text-muted-foreground'}`} />
-              
+              <Upload className={`h-10 w-10 mb-3 ${fileData ? "text-primary" : "text-muted-foreground"}`} />
               {fileData ? (
                 <>
                   <p className="text-sm font-medium mb-1 text-primary">{fileData.name}</p>
                   <p className="text-xs text-muted-foreground mb-3">Ready to be analyzed by AI</p>
-                  <Button variant="secondary" size="sm" className="relative z-20" onClick={(e) => { e.preventDefault(); setFileData(null); }}>Remove File</Button>
+                  <Button variant="secondary" size="sm" className="relative z-20" onClick={(e) => { e.preventDefault(); setFileData(null); }}>
+                    Remove File
+                  </Button>
                 </>
               ) : (
                 <>
                   <p className="text-sm font-medium mb-1">Choose a file or drag & drop it here</p>
-                  <p className="text-xs text-muted-foreground mb-3">JPEG, PNG, upto 10MB</p>
+                  <p className="text-xs text-muted-foreground mb-3">JPEG, PNG, up to 10MB</p>
                   <Button type="button" variant="outline" size="sm">Browse Files</Button>
                 </>
               )}
@@ -191,19 +209,50 @@ export default function CreateAssignmentPage() {
             </p>
 
             <div>
-              <label className="text-sm font-bold mb-2 block">Topic / Title <span className="text-destructive">*</span></label>
+              {/* Topic */}
+              <label className="text-sm font-bold mb-2 block">
+                Topic / Title <span className="text-destructive">*</span>
+              </label>
               <Input placeholder="E.g., CBSE Grade 8 Science" {...register("topic")} className="bg-card mb-1" />
               {errors.topic && <p className="text-red-500 text-xs mb-3">{errors.topic.message}</p>}
-              
-              <label className="text-sm font-bold mb-2 mt-4 block">Due Date <span className="text-destructive">*</span></label>
-              <Input type="date" {...register("dueDate")} className="bg-card mb-1" />
-              {errors.dueDate && <p className="text-red-500 text-xs mb-3">{errors.dueDate.message}</p>}
 
+              {/* ✅ Due Date — replaced <Input type="date"> with shadcn Calendar in a Popover */}
+              <label className="text-sm font-bold mb-2 mt-4 block">
+                Due Date <span className="text-destructive">*</span>
+              </label>
+              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal bg-card",
+                      !selectedDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 rounded-[1.5rem] shadow-[0_14px_45px_rgba(15,23,42,0.15)] border border-border" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={handleDateSelect}
+                    disabled={(date) => (today ? date < today : false)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              {errors.dueDate && <p className="text-red-500 text-xs mt-1 mb-3">{errors.dueDate.message}</p>}
+
+              {/* Instructions */}
               <label className="text-sm font-bold mb-2 mt-4 block">Additional Instructions</label>
               <Input placeholder="E.g., Provide hints for each question" {...register("instructions")} className="bg-card mb-1" />
               {errors.instructions && <p className="text-red-500 text-xs mb-3">{errors.instructions.message}</p>}
             </div>
 
+            {/* Questions Table */}
             <div>
               <div className="grid grid-cols-[1fr_auto_auto] gap-4 items-center mb-3">
                 <label className="text-sm font-bold">Question Type</label>
@@ -213,10 +262,7 @@ export default function CreateAssignmentPage() {
               {questions.map((q) => (
                 <div key={q.id} className="grid grid-cols-[1fr_auto_auto] gap-4 items-center mb-3">
                   <div className="flex items-center gap-2">
-                    <Select
-                      value={q.type}
-                      onValueChange={(val) => updateRow(q.id, "type", val)}
-                    >
+                    <Select value={q.type} onValueChange={(val) => updateRow(q.id, "type", val)}>
                       <SelectTrigger className="bg-card">
                         <SelectValue />
                       </SelectTrigger>
@@ -231,44 +277,20 @@ export default function CreateAssignmentPage() {
                     </button>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => updateRow(q.id, "count", Math.max(1, q.count - 1))}
-                    >
+                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateRow(q.id, "count", Math.max(1, q.count - 1))}>
                       <Minus className="h-3 w-3" />
                     </Button>
                     <span className="w-8 text-center text-sm font-medium">{q.count}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => updateRow(q.id, "count", q.count + 1)}
-                    >
+                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateRow(q.id, "count", q.count + 1)}>
                       <Plus className="h-3 w-3" />
                     </Button>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => updateRow(q.id, "marks", Math.max(1, q.marks - 1))}
-                    >
+                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateRow(q.id, "marks", Math.max(1, q.marks - 1))}>
                       <Minus className="h-3 w-3" />
                     </Button>
                     <span className="w-8 text-center text-sm font-medium">{q.marks}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => updateRow(q.id, "marks", q.marks + 1)}
-                    >
+                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateRow(q.id, "marks", q.marks + 1)}>
                       <Plus className="h-3 w-3" />
                     </Button>
                   </div>
@@ -288,10 +310,13 @@ export default function CreateAssignmentPage() {
               <h2 className="text-xl font-bold mb-1">Review & Confirm</h2>
               <p className="text-sm text-muted-foreground">Review your assignment details before creating</p>
             </div>
-            
+
             <div className="rounded-lg bg-accent p-4 mb-4">
               <h3 className="font-bold text-lg">{watch("topic")}</h3>
-              <p className="text-sm text-muted-foreground mt-1">Due: {isMounted && watch("dueDate") ? new Date(watch("dueDate")).toLocaleDateString() : ''}</p>
+              {/* ✅ Use selectedDate directly instead of re-parsing the string */}
+              <p className="text-sm text-muted-foreground mt-1">
+                Due: {isMounted && selectedDate ? format(selectedDate, "PPP") : "—"}
+              </p>
             </div>
 
             <div className="space-y-3">
