@@ -30,7 +30,7 @@ An intelligent assessment creation platform for educators designed for high scal
 
 ## System Design
 
-![Alt Text](./System-Design-Transparent.png) 
+![Alt Text](./System-Design.png) 
 
 ### Architecture Flow
 

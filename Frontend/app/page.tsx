@@ -77,7 +77,7 @@ export default function HomePage() {
               className="text-[20px] font-[800] tracking-tight text-white" 
               style={{ fontFamily: 'var(--font-bricolage)' }}
             >
-              AI-Powered Question Paper
+              AI Powered Question Paper
             </h2>
           </div>
           <p className="text-sm text-white/50 font-medium mb-5 ml-8">
