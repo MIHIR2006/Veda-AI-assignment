@@ -30,33 +30,7 @@ An intelligent assessment creation platform for educators designed for high scal
 
 ## System Design
 
-```
-                          +------------------+
-                          |   Next.js App    |
-                          |   (Frontend)     |
-                          |   Port: 3000     |
-                          +--------+---------+
-                                   |
-                          REST API | Socket.IO
-                                   |
-                          +--------+---------+
-                          |   Express Server |
-                          |   (Backend)      |
-                          |   Port: 8080     |
-                          +--------+---------+
-                                   |
-                    +--------------+--------------+
-                    |              |               |
-              +-----+-----+ +----+----+   +------+------+
-              |  MongoDB  | |  Redis  |   |   BullMQ    |
-              |           | | (Cache) |   |   Worker    |
-              +-----------+ +---------+   +------+------+
-                                                 |
-                                          +------+------+
-                                          | Gemini 2.5  |
-                                          | Flash API   |
-                                          +-------------+
-```
+![Alt Text](./System-Design-Transparent.png) 
 
 ### Architecture Flow
 
