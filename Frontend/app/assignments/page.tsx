@@ -15,6 +15,21 @@ import {
 import { useAssignmentStore, AssignmentData } from "@/store/assignmentStore";
 import { toast } from "sonner";
 
+function SkeletonCard() {
+  return (
+    <div className="rounded-[24px] border border-neutral-100 bg-card p-5 md:p-8 flex flex-col justify-between min-h-[116px] md:min-h-[162px] animate-pulse">
+      <div className="flex items-start justify-between">
+        <div className="h-8 bg-neutral-200 rounded-lg w-3/4" />
+        <div className="h-10 w-10 bg-neutral-100 rounded-lg" />
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="h-4 bg-neutral-100 rounded w-1/3" />
+        <div className="h-4 bg-neutral-100 rounded w-1/4" />
+      </div>
+    </div>
+  );
+}
+
 export default function AssignmentsPage() {
   const router = useRouter();
   const { assignments, fetchAssignments, loadingAssignments, deleteAssignment } = useAssignmentStore();
@@ -59,8 +74,32 @@ export default function AssignmentsPage() {
   if (loadingAssignments) {
     return (
       <AppLayout title="Assignment" showBack onBack={() => router.push("/")}>
-        <div className="flex flex-1 items-center justify-center py-24">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <div className="animate-fade-in">
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
+              <h1 className="text-2xl font-bold">Assignments</h1>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Manage and create assignments for your classes.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-[24px] p-2 border border-neutral-100 shadow-sm flex items-center justify-between mb-8">
+            <Button variant="ghost" className="gap-2 text-muted-foreground hover:bg-neutral-50 px-4" disabled>
+              <Filter className="h-4 w-4 text-muted-foreground/60" />
+              <span className="text-sm font-medium">Filter By</span>
+            </Button>
+            <div className="relative w-full max-w-sm mr-2">
+              <div className="h-10 bg-neutral-100 rounded-full animate-pulse" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
         </div>
       </AppLayout>
     );
