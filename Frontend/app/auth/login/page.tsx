@@ -19,7 +19,7 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     setTimeout(() => {
-      router.push("/");
+      router.push("/home");
     }, 1000);
   };
 

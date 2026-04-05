@@ -22,7 +22,7 @@ export function AppSidebar() {
   }, [fetchAssignments, assignments.length]);
 
   const navItems = [
-    { label: "Home", icon: LayoutGrid, path: "/" },
+    { label: "Home", icon: LayoutGrid, path: "/home" },
     { label: "My Groups", icon: MessageSquare, path: "/groups" },
     { label: "Assignments", icon: ClipboardList, path: "/assignments", badge: assignments.length > 0 ? assignments.length : null },
     { label: "AI Teacher's Toolkit", icon: Book, path: "/toolkit" },
@@ -56,7 +56,7 @@ export function AppSidebar() {
       <nav className="flex-1 space-y-2 px-4 py-4">
         {navItems.map((item) => {
           const isActive = pathname === item.path || 
-            (item.path !== "/" && pathname.startsWith(item.path));
+          (item.path !== "/home" && item.path !== "/" && pathname.startsWith(item.path));
           return (
             <Link
               key={item.path}
