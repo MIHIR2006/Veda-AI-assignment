@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import {
   Sparkles,
   ArrowRight,
@@ -21,16 +21,16 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 30 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.1, duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+    transition: { delay: i * 0.1, duration: 0.6, ease: [0.16, 1, 0.3, 1] as const },
   }),
 };
 
-const stagger = {
+const stagger: Variants = {
   visible: { transition: { staggerChildren: 0.08 } },
 };
 
@@ -38,8 +38,8 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#F5F3F0] overflow-hidden">
       {/* Navbar */}
-      <nav className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 border-b border-neutral-200/60">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <nav className="sticky top-3 md:top-4 z-50 px-0 md:px-0 max-w-7xl mx-auto w-full">
+        <div className="flex h-16 items-center justify-between border border-border bg-white px-6 rounded-[24px] shadow-sm">
           <Link href="/" className="flex items-center gap-2.5">
             <Image
               src="/assets/veda-logo.png"
@@ -133,7 +133,7 @@ export default function LandingPage() {
               className="text-lg md:text-xl text-muted-foreground/70 font-medium max-w-2xl mx-auto mb-10 leading-relaxed"
             >
               Generate question papers, grade responses, and manage your classroom
-              — all powered by artificial intelligence. Built for modern educators.
+              all powered by artificial intelligence. Built for modern educators.
             </motion.p>
 
             {/* CTA Buttons */}
