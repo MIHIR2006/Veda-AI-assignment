@@ -38,7 +38,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#F5F3F0] overflow-hidden">
       {/* Navbar */}
-      <nav className="sticky top-3 md:top-4 z-50 px-0 md:px-0 max-w-7xl mx-auto w-full">
+      <nav className="sticky top-3 md:top-4 z-50 px-[80px] w-full">
         <div className="flex h-16 items-center justify-between border border-border bg-white px-6 rounded-[24px] shadow-sm">
           <Link href="/" className="flex items-center gap-2.5">
             <Image
@@ -585,8 +585,8 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-neutral-200/60 bg-white/50 py-12 px-6">
-        <div className="max-w-7xl mx-auto">
+      <footer className="px-[10px] pb-[10px] mt-20">
+        <div className="border border-neutral-200/60 bg-white shadow-sm rounded-[24px] py-10 px-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2.5">
               <Image
