@@ -54,7 +54,27 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user, account }) {
-      if (user) {
+      if (account && (account.provider === "google" || account.provider === "github") && user) {
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/auth/oauth`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              email: user.email, 
+              name: user.name, 
+              provider: account.provider, 
+              providerId: account.providerAccountId 
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            token.id = data.userId;
+            token.accessToken = data.token;
+          }
+        } catch (e) {
+          console.error("OAuth backend error:", e);
+        }
+      } else if (user) {
         token.id = user.id;
         token.accessToken = (user as any).accessToken;
       }

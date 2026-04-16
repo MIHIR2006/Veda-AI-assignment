@@ -34,7 +34,7 @@ export type AssignmentData = {
 
 async function getAuthHeaders(): Promise<HeadersInit> {
   const session = await getSession();
-  const token = (session as any)?.accessToken;
+  const token = (session as any)?.user?.accessToken;
   
   if (token) {
     return {

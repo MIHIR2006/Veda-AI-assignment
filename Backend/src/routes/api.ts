@@ -54,6 +54,36 @@ router.post('/auth/register', async (req, res) => {
   }
 });
 
+router.post('/auth/oauth', async (req, res) => {
+  try {
+    const { email, name } = req.body;
+    let user = await User.findOne({ email: email.toLowerCase() });
+    
+    if (!user) {
+      const randomPassword = uuidv4();
+      user = new User({ 
+        email: email.toLowerCase(), 
+        name: name || email.split('@')[0], 
+        password: randomPassword, 
+        schoolName: 'OAuth User' 
+      });
+      await user.save();
+    }
+
+    const token = await createToken(user._id.toString(), user.email);
+
+    res.json({ 
+      userId: user._id, 
+      email: user.email, 
+      name: user.name,
+      token 
+    });
+  } catch (error) {
+    console.error('Error in OAuth verification:', error);
+    res.status(500).json({ error: 'Failed to verify oauth user' });
+  }
+});
+
 router.post('/auth/verify', async (req, res) => {
   try {
     const { email, password, action } = req.body;

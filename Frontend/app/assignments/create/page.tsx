@@ -144,7 +144,7 @@ export default function CreateAssignmentPage() {
       }
 
       const session = await getSession();
-      const token = (session as any)?.accessToken;
+      const token = (session as any)?.user?.accessToken;
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
