@@ -238,7 +238,7 @@ export default function AssignmentResultPage() {
                 </span>
               </Button>
 
-              {assignment.userId && currentUserId === assignment.userId && (
+              {assignment?.userId && currentUserId === assignment?.userId && (
                 <Dialog 
                   open={shareOpen} 
                   onOpenChange={(open) => {

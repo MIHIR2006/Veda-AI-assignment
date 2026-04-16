@@ -29,6 +29,9 @@ export type AssignmentData = {
   jobId: string;
   status: 'pending' | 'completed' | 'failed';
   paper?: PaperData;
+  userId?: string;
+  isPublic?: boolean;
+  sharedWithGroups?: string[];
   createdAt: string;
 };
 
