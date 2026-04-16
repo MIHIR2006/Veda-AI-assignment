@@ -17,6 +17,17 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { getSession } from "next-auth/react";
+import { MultiStepLoader } from "@/components/ui/multi-step-loader";
+
+const loadingStates = [
+  { text: "Analyzing assignment parameters..." },
+  { text: "Gathering educational context..." },
+  { text: "Drafting custom questions..." },
+  { text: "Balancing difficulty levels..." },
+  { text: "Structuring question paper..." },
+  { text: "Finalizing layout..." },
+  { text: "Almost there..." }
+];
 
 const questionSchema = z.object({
   id: z.string(),
@@ -187,7 +198,11 @@ export default function CreateAssignmentPage() {
           <div className={`h-1.5 flex-1 rounded-full ${step >= 2 ? "bg-dark" : "bg-border"}`} />
         </div>
 
-        {step === 1 && (
+        {isSubmitting ? (
+          <div className="rounded-[24px] border border-neutral-100 bg-card p-6 md:p-12 space-y-6 shadow-sm min-h-[400px] flex items-center justify-center">
+             <MultiStepLoader loadingStates={loadingStates} loading={isSubmitting} duration={2000} />
+          </div>
+        ) : step === 1 ? (
           <div 
             className="rounded-[24px] border border-neutral-100 bg-card p-6 md:p-8 space-y-6 shadow-sm"
             style={{ fontFamily: 'var(--font-bricolage)' }}
@@ -344,9 +359,7 @@ export default function CreateAssignmentPage() {
               </div>
             </div>
           </div>
-        )}
-
-        {step === 2 && (
+        ) : step === 2 && (
           <div className="rounded-2xl border border-border bg-card p-6 md:p-8 space-y-6">
             <div>
               <h2 className="text-xl font-bold mb-1">Review & Confirm</h2>
@@ -378,6 +391,7 @@ export default function CreateAssignmentPage() {
           </div>
         )}
 
+        {!isSubmitting && (
         <div className="flex justify-between mt-8">
           <Button
             type="button"
@@ -409,6 +423,7 @@ export default function CreateAssignmentPage() {
             {isSubmitting && step === 2 && <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
           </Button>
         </div>
+        )}
       </div>
     </AppLayout>
   );

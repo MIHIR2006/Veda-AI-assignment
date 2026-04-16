@@ -8,6 +8,17 @@ import { Button } from "@/components/ui/button";
 import { useAssignmentStore, AssignmentData } from "@/store/assignmentStore";
 import { Download, RefreshCw, FileText, Sparkles } from "lucide-react";
 import { getSession } from "next-auth/react";
+import { MultiStepLoader } from "@/components/ui/multi-step-loader";
+
+const loadingStates = [
+  { text: "Analyzing assignment parameters..." },
+  { text: "Gathering educational context..." },
+  { text: "Drafting custom questions..." },
+  { text: "Balancing difficulty levels..." },
+  { text: "Structuring question paper..." },
+  { text: "Finalizing layout..." },
+  { text: "Almost there..." }
+];
 
 export default function AssignmentResultPage() {
   const params = useParams();
@@ -59,7 +70,6 @@ export default function AssignmentResultPage() {
   const paper = activeJobId === assignment?.jobId && status === 'completed'
     ? generatedPaper
     : assignment?.paper;
-    
   const isGenerating = (assignment?.status === 'pending' && status !== 'completed' && status !== 'failed') || status === 'generating';
 
   // Polling fallback in case WebSocket event is missed
@@ -157,9 +167,8 @@ export default function AssignmentResultPage() {
         <div id="pdf-content" ref={contentRef} className="bg-white rounded-[2rem] p-6 md:p-12 shadow-sm border border-neutral-100 min-h-[600px] print:m-0 print:border-0 print:shadow-none print:w-[210mm] print:mx-auto">
           <div style={{ padding: '24px 48px' }}>
           {isGenerating ? (
-            <div className="flex flex-col items-center justify-center h-64 text-muted-foreground animate-pulse">
-              <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-              <p>AI is thinking...</p>
+            <div className="flex flex-col items-center justify-center h-64">
+              <MultiStepLoader loadingStates={loadingStates} loading={isGenerating} duration={2000} />
             </div>
           ) : paper ? (
             <div className="text-black space-y-8 font-serif">
