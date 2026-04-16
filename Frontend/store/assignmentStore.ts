@@ -107,6 +107,18 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
   },
 
   startJob: (jobId: string) => {
+    const state = get();
+    
+    // Prevent overwriting if the socket already marked this job as completed or it's currently generating
+    if (state.activeJobId === jobId && (state.status === 'generating' || state.status === 'completed')) {
+      if (!state.socket) {
+        state.initializeSocket();
+      } else {
+        state.socket.emit('joinJobRoom', jobId);
+      }
+      return;
+    }
+
     set({
       activeJobId: jobId,
       status: 'generating',
@@ -114,7 +126,6 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
       error: null
     });
     
-    const state = get();
     if (state.socket) {
       state.socket.emit('joinJobRoom', jobId);
       console.log(`Joined job room: ${jobId}`);
