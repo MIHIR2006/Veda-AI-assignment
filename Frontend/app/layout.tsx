@@ -18,6 +18,9 @@ const bricolageGrotesque = Bricolage_Grotesque({
 export const metadata: Metadata = {
   title: "VedaAI - AI Teacher's Toolkit",
   description: "Create assignments and grade with the power of AI.",
+  icons: {
+    icon: "/assets/veda-logo.png",
+  },
 };
 
 export default function RootLayout({
