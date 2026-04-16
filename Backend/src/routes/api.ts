@@ -3,6 +3,9 @@ import { Queue } from 'bullmq';
 import { Redis } from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
 import { Assignment } from '../models/Assignment.js';
+import { User } from '../models/User.js';
+import { authMiddleware, AuthRequest } from '../middleware/authMiddleware.js';
+import { SignJWT, jwtVerify } from 'jose';
 
 const router = Router();
 
@@ -10,13 +13,81 @@ const redisConnection = new Redis(process.env.REDIS_URL || 'redis://localhost:63
 
 export const paperQueue = new Queue('PaperGenerationQueue', { connection: redisConnection as any });
 
+async function createToken(userId: string, email: string): Promise<string> {
+  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+  return new SignJWT({ userId, email })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('24h')
+    .sign(secret);
+}
+
 router.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-router.post('/generate-paper', async (req, res) => {
+router.post('/auth/register', async (req, res) => {
+  try {
+    const { email, password, name, schoolName } = req.body;
+    
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      res.status(400).json({ error: 'Email already registered' });
+      return;
+    }
+
+    const user = new User({ email, password, name, schoolName });
+    await user.save();
+
+    const token = await createToken(user._id.toString(), user.email);
+
+    res.status(201).json({ 
+      message: 'User created successfully', 
+      token,
+      userId: user._id,
+      email: user.email,
+      name: user.name
+    });
+  } catch (error) {
+    console.error('Error registering user:', error);
+    res.status(500).json({ error: 'Failed to register user' });
+  }
+});
+
+router.post('/auth/verify', async (req, res) => {
+  try {
+    const { email, password, action } = req.body;
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      res.status(401).json({ error: 'Invalid credentials' });
+      return;
+    }
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      res.status(401).json({ error: 'Invalid credentials' });
+      return;
+    }
+
+    const token = await createToken(user._id.toString(), user.email);
+
+    res.json({ 
+      userId: user._id, 
+      email: user.email, 
+      name: user.name,
+      token 
+    });
+  } catch (error) {
+    console.error('Error verifying user:', error);
+    res.status(500).json({ error: 'Failed to verify credentials' });
+  }
+});
+
+router.post('/generate-paper', authMiddleware, async (req: AuthRequest, res) => {
   try {
     const { topic, marks, difficulty, questionTypes, instructions, imageBase64, mimeType, dueDate } = req.body;
+    const userId = req.user?.userId;
     
     const jobId = uuidv4();
     
@@ -28,15 +99,16 @@ router.post('/generate-paper', async (req, res) => {
       instructions,
       dueDate,
       jobId,
-      status: 'pending'
+      status: 'pending',
+      userId
     });
     
     await assignment.save();
     
     await paperQueue.add(
       'generate-paper',
-      { topic, marks, difficulty, questionTypes, instructions, dueDate, jobId, imageBase64, mimeType },
-      { jobId } // Pass the jobId as the BullMQ job ID option
+      { topic, marks, difficulty, questionTypes, instructions, dueDate, jobId, imageBase64, mimeType, userId },
+      { jobId }
     );
     
     await redisConnection.del('assignments_list');
@@ -50,12 +122,36 @@ router.post('/generate-paper', async (req, res) => {
 
 router.get('/assignments', async (req, res) => {
   try {
+    const authHeader = req.headers.authorization;
+    let userId = null;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+        const { payload } = await jwtVerify(token, secret);
+        userId = payload.userId as string;
+      } catch (e) {
+        // Invalid token, continue without userId
+      }
+    }
+
     const cached = await redisConnection.get('assignments_list');
     if (cached) {
-      res.json(JSON.parse(cached));
+      let assignments = JSON.parse(cached);
+      if (userId) {
+        assignments = assignments.filter((a: any) => !a.userId || a.userId === userId);
+      }
+      res.json(assignments);
       return;
     }
-    const assignments = await Assignment.find().sort({ createdAt: -1 });
+
+    let assignments = await Assignment.find().sort({ createdAt: -1 });
+    
+    if (userId) {
+      assignments = assignments.filter((a: any) => !a.userId || a.userId === userId);
+    }
+    
     await redisConnection.set('assignments_list', JSON.stringify(assignments), 'EX', 300);
     res.json(assignments);
   } catch (error) {
@@ -78,13 +174,21 @@ router.get('/assignments/:id', async (req, res) => {
   }
 });
 
-router.delete('/assignments/:id', async (req, res) => {
+router.delete('/assignments/:id', authMiddleware, async (req: AuthRequest, res) => {
   try {
-    const assignment = await Assignment.findByIdAndDelete(req.params.id);
+    const assignment = await Assignment.findById(req.params.id);
     if (!assignment) {
       res.status(404).json({ error: 'Assignment not found' });
       return;
     }
+    
+    // Check ownership - allow if no userId (backward compat) or matches
+    if (assignment.userId && assignment.userId !== req.user?.userId) {
+      res.status(403).json({ error: 'Not authorized to delete this assignment' });
+      return;
+    }
+    
+    await Assignment.findByIdAndDelete(req.params.id);
     await redisConnection.del('assignments_list');
     res.json({ message: 'Assignment deleted successfully' });
   } catch (error) {
@@ -93,11 +197,16 @@ router.delete('/assignments/:id', async (req, res) => {
   }
 });
 
-router.post('/assignments/:id/regenerate', async (req, res) => {
+router.post('/assignments/:id/regenerate', authMiddleware, async (req: AuthRequest, res) => {
   try {
     const assignment = await Assignment.findById(req.params.id);
     if (!assignment) {
       res.status(404).json({ error: 'Assignment not found' });
+      return;
+    }
+    
+    if (assignment.userId && assignment.userId !== req.user?.userId) {
+      res.status(403).json({ error: 'Not authorized to regenerate this assignment' });
       return;
     }
     
@@ -118,9 +227,10 @@ router.post('/assignments/:id/regenerate', async (req, res) => {
         questionTypes: assignment.questionTypes,
         instructions: assignment.instructions,
         dueDate: assignment.dueDate,
-        jobId: newJobId
+        jobId: newJobId,
+        userId: assignment.userId
       },
-      { jobId: newJobId }
+      { job: newJobId }
     );
     
     res.status(202).json({ message: 'Regeneration queued', jobId: newJobId });

@@ -16,6 +16,7 @@ import { useAssignmentStore } from "@/store/assignmentStore";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { getSession } from "next-auth/react";
 
 const questionSchema = z.object({
   id: z.string(),
@@ -142,9 +143,16 @@ export default function CreateAssignmentPage() {
         payload.mimeType = fileData.mimeType;
       }
 
+      const session = await getSession();
+      const token = (session as any)?.accessToken;
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/generate-paper`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(payload),
       });
 

@@ -10,6 +10,7 @@ export interface IAssignment extends Document {
   jobId: string;
   status: 'pending' | 'completed' | 'failed';
   paper?: any;
+  userId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,7 +29,8 @@ const AssignmentSchema: Schema = new Schema(
       enum: ['pending', 'completed', 'failed'], 
       default: 'pending' 
     },
-    paper: { type: Schema.Types.Mixed }
+    paper: { type: Schema.Types.Mixed },
+    userId: { type: String }
   },
   { timestamps: true }
 );

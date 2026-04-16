@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { io, Socket } from 'socket.io-client';
+import { getSession } from 'next-auth/react';
 
 export type QuestionData = {
   text: string;
@@ -31,6 +32,21 @@ export type AssignmentData = {
   createdAt: string;
 };
 
+async function getAuthHeaders(): Promise<HeadersInit> {
+  const session = await getSession();
+  const token = (session as any)?.accessToken;
+  
+  if (token) {
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    };
+  }
+  return {
+    'Content-Type': 'application/json'
+  };
+}
+
 export type AssignmentState = {
   assignments: AssignmentData[];
   activeJobId: string | null;
@@ -60,7 +76,9 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
   fetchAssignments: async () => {
     set({ loadingAssignments: true });
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/assignments`);
+      const headers = await getAuthHeaders();
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const res = await fetch(`${apiUrl}/api/assignments`, { headers });
       const data = await res.json();
       set({ assignments: data, loadingAssignments: false });
     } catch (error) {
@@ -71,7 +89,12 @@ export const useAssignmentStore = create<AssignmentState>((set, get) => ({
 
   deleteAssignment: async (id: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/assignments/${id}`, { method: 'DELETE' });
+      const headers = await getAuthHeaders();
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+      const res = await fetch(`${apiUrl}/api/assignments/${id}`, { 
+        method: 'DELETE',
+        headers
+      });
       if (res.ok) {
         set((state) => ({ assignments: state.assignments.filter(a => a._id !== id) }));
         return true;

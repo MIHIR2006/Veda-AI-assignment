@@ -5,9 +5,11 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { User, School, Mail, Globe, Moon, Sun, Bell, Shield, ChevronRight } from "lucide-react";
+import { User, School, Mail, Globe, Moon, Sun, Bell, Shield, ChevronRight, LogOut } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
 
 export default function SettingsPage() {
+  const { data: session } = useSession();
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState(false);
 
@@ -16,8 +18,8 @@ export default function SettingsPage() {
       title: "Profile",
       icon: User,
       items: [
-        { label: "Full Name", value: "Mihir Goswami", type: "text" },
-        { label: "Email", value: "mihirgoswami2006@gmail.com", type: "text" },
+        { label: "Full Name", value: session?.user?.name || "Mihir Goswami", type: "text" },
+        { label: "Email", value: session?.user?.email || "mihirgoswami2006@gmail.com", type: "text" },
         { label: "Role", value: "Developer", type: "text" },
       ],
     },
@@ -35,7 +37,6 @@ export default function SettingsPage() {
   return (
     <AppLayout title="Settings">
       <div className="animate-fade-in max-w-3xl">
-        {/* Header */}
         <div className="mb-8">
           <h1 
             className="text-[28px] md:text-[32px] font-[800] tracking-tight text-foreground/90 mb-1" 
@@ -48,7 +49,6 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        {/* Profile Card */}
         <div className="rounded-[24px] border border-neutral-100 bg-card p-6 md:p-8 shadow-sm mb-6">
           <div className="flex items-center gap-5 mb-6">
             <Avatar className="h-16 w-16 border-2 border-neutral-200">
@@ -66,7 +66,6 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Info Sections */}
         {sections.map((section) => (
           <div key={section.title} className="rounded-[24px] border border-neutral-100 bg-card p-6 md:p-8 shadow-sm mb-6">
             <div className="flex items-center gap-2.5 mb-5">
@@ -163,6 +162,27 @@ export default function SettingsPage() {
               <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
             </div>
           </div>
+        </div>
+
+        <div className="rounded-[24px] border border-neutral-100 bg-card p-6 md:p-8 shadow-sm mb-6">
+          <h3 
+            className="text-[18px] font-[800] tracking-tight text-foreground/90 mb-2" 
+            style={{ fontFamily: 'var(--font-bricolage)' }}
+          >
+            Account
+          </h3>
+          <p className="text-sm font-semibold text-muted-foreground/60 mb-6">
+            Manage your session and account access
+          </p>
+          
+          <Button 
+            variant="outline" 
+            onClick={() => signOut({ callbackUrl: '/' })}
+            className="w-full flex items-center justify-center gap-2 h-12 rounded-xl border-neutral-200 text-red-600 hover:bg-neutral-50 hover:text-red-700 font-bold transition-all shadow-sm"
+          >
+            <LogOut className="h-5 w-5" />
+            Sign Out from VedaAI
+          </Button>
         </div>
 
         {/* App Info */}

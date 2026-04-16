@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import Lenis from "lenis";
 import Link from "next/link";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { motion, Variants } from "framer-motion";
 import {
   Sparkles,
@@ -37,8 +39,16 @@ const stagger: Variants = {
 };
 
 export default function LandingPage() {
+  const { status } = useSession();
+  const router = useRouter();
+
   useEffect(() => {
-    // Initialize Lenis
+    if (status === "authenticated") {
+      router.replace("/home");
+    }
+  }, [status, router]);
+
+  useEffect(() => {
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -550,7 +560,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Final CTA */}
       <section className="py-24 px-6">
         <motion.div
           className="max-w-4xl mx-auto"
