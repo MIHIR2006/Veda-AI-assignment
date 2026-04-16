@@ -24,6 +24,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import vedaLogo from "@/public/assets/veda-logo.png";
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 30 },
@@ -76,10 +77,8 @@ export default function LandingPage() {
         <div className="flex h-16 items-center justify-between border border-border bg-white px-6 rounded-[24px] shadow-sm">
           <Link href="/" className="flex items-center gap-2.5">
             <Image
-              src="/assets/veda-logo.png"
+              src={vedaLogo}
               alt="VedaAI"
-              width={36}
-              height={36}
               className="h-9 w-9"
             />
             <span
@@ -623,10 +622,8 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2.5">
               <Image
-                src="/assets/veda-logo.png"
+                src={vedaLogo}
                 alt="VedaAI"
-                width={28}
-                height={28}
                 className="h-7 w-7"
               />
               <span

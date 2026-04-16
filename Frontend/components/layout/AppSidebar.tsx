@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import vedaLogo from "@/public/assets/veda-logo.png";
 
 import { useAssignmentStore } from "@/store/assignmentStore";
 import { useEffect } from "react";
@@ -33,10 +34,8 @@ export function AppSidebar() {
     <aside className="hidden lg:flex w-[270px] shrink-0 sticky top-3 md:top-4 self-start flex-col h-[calc(100vh-24px)] md:h-[calc(100vh-32px)] border border-border bg-white rounded-[24px] shadow-sm overflow-hidden">
       <div className="flex items-center gap-2 px-5 py-5">
         <Image
-          src="/assets/veda-logo.png"
+          src={vedaLogo}
           alt="VedaAI"
-          width={36}
-          height={36}
           className="h-9 w-9"
         />
         <span className="text-xl font-bold tracking-tight">VedaAI</span>

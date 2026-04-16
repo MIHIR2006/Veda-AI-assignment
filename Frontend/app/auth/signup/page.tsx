@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, Mail, Lock, User, Building2, Sparkles, ArrowRight, CheckCircle2, Wand2 } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
+import vedaLogo from "@/public/assets/veda-logo.png";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -80,7 +81,7 @@ export default function SignUpPage() {
         <div className="w-full max-w-md mx-auto">
           <div className="lg:hidden text-center mb-6">
             <Link href="/" className="inline-flex items-center gap-2">
-              <Image src="/assets/veda-logo.png" alt="VedaAI" width={48} height={48} className="h-12 w-12" />
+              <Image src={vedaLogo} alt="VedaAI" className="h-12 w-12" />
             </Link>
           </div>
 
@@ -237,7 +238,7 @@ export default function SignUpPage() {
         <div className="relative z-10 flex flex-col justify-center items-center w-full p-12">
           <div className="text-center max-w-md">
             <div className="flex justify-center mb-8">
-              <Image src="/assets/veda-logo.png" alt="VedaAI" width={80} height={80} className="h-20 w-20" />
+              <Image src={vedaLogo} alt="VedaAI" className="h-20 w-20" />
             </div>
             <h2 className="text-4xl font-[800] text-white mb-4 tracking-tight" style={{ fontFamily: 'var(--font-bricolage)' }}>
               Join VedaAI Today
