@@ -7,6 +7,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { useAssignmentStore, AssignmentData } from "@/store/assignmentStore";
 import { Download, RefreshCw, FileText, Sparkles } from "lucide-react";
+import { getSession } from "next-auth/react";
 
 export default function AssignmentResultPage() {
   const params = useParams();
@@ -31,7 +32,7 @@ export default function AssignmentResultPage() {
     `
   });
 
-  const { generatedPaper, status, activeJobId, initializeSocket, disconnectSocket, startJob } = useAssignmentStore();
+  const { generatedPaper, status, error, activeJobId, initializeSocket, disconnectSocket, startJob } = useAssignmentStore();
 
   useEffect(() => {
     const fetchIt = async () => {
@@ -59,11 +60,49 @@ export default function AssignmentResultPage() {
     ? generatedPaper
     : assignment?.paper;
     
-  const isGenerating = (assignment?.status === 'pending' && status !== 'completed') || status === 'generating';
+  const isGenerating = (assignment?.status === 'pending' && status !== 'completed' && status !== 'failed') || status === 'generating';
+
+  // Polling fallback in case WebSocket event is missed
+  useEffect(() => {
+    if (!isGenerating || !id) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/assignments/${id}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.status === 'completed' || data.status === 'failed') {
+            setAssignment(data);
+            // If it's completed, inform the store so the global status matches
+            if (data.status === 'completed' && data.jobId === activeJobId) {
+               useAssignmentStore.setState({ status: 'completed', generatedPaper: data.paper });
+            } else if (data.status === 'failed') {
+               useAssignmentStore.setState({ status: 'failed', error: "Generation failed" });
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Polling error:", err);
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [isGenerating, id, activeJobId]);
 
   const handleRegenerate = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/assignments/${id}/regenerate`, { method: 'POST' });
+      const session = await getSession();
+      const token = (session as any)?.user?.accessToken;
+      const headers: Record<string, string> = {};
+      
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/assignments/${id}/regenerate`, { 
+        method: 'POST',
+        headers 
+      });
       if (res.ok) {
         const data = await res.json();
         startJob(data.jobId);
@@ -171,8 +210,20 @@ export default function AssignmentResultPage() {
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-              <p>Failed to load paper or paper generation failed.</p>
+            <div className="flex flex-col items-center justify-center h-64 text-center">
+              <div className="h-16 w-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <span className="text-red-500 text-2xl">⚠️</span>
+              </div>
+              <h3 className="text-lg font-bold text-[#1A1A1A] mb-2">Paper Generation Failed</h3>
+              <p className="text-muted-foreground max-w-md mx-auto mb-6">
+                {status === 'failed' && error 
+                  ? error 
+                  : "We encountered an issue while generating your assignment. Please try again."}
+              </p>
+              <Button onClick={handleRegenerate} variant="dark" className="rounded-full shadow-md gap-2" size="lg">
+                <RefreshCw className="h-4 w-4" />
+                Retry Generation
+              </Button>
             </div>
           )}
           </div>
