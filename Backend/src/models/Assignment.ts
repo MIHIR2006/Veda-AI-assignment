@@ -11,6 +11,8 @@ export interface IAssignment extends Document {
   status: 'pending' | 'completed' | 'failed';
   paper?: any;
   userId?: string;
+  isPublic?: boolean;
+  sharedWithGroups?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,7 +32,9 @@ const AssignmentSchema: Schema = new Schema(
       default: 'pending' 
     },
     paper: { type: Schema.Types.Mixed },
-    userId: { type: String }
+    userId: { type: String },
+    isPublic: { type: Boolean, default: false },
+    sharedWithGroups: [{ type: String }]
   },
   { timestamps: true }
 );

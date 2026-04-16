@@ -4,6 +4,7 @@ import { Redis } from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
 import { Assignment } from '../models/Assignment.js';
 import { User } from '../models/User.js';
+import { Group } from '../models/Group.js';
 import { authMiddleware, AuthRequest } from '../middleware/authMiddleware.js';
 import { SignJWT, jwtVerify } from 'jose';
 
@@ -166,11 +167,21 @@ router.get('/assignments', async (req, res) => {
       }
     }
 
+    let userGroupIds: string[] = [];
+    if (userId) {
+      const userGroups = await Group.find({ members: userId });
+      userGroupIds = userGroups.map(g => g._id.toString());
+    }
+
     const cached = await redisConnection.get('assignments_list');
     if (cached) {
       let assignments = JSON.parse(cached);
       if (userId) {
-        assignments = assignments.filter((a: any) => !a.userId || a.userId === userId);
+        assignments = assignments.filter((a: any) => 
+          !a.userId || a.userId === userId || a.isPublic || (a.sharedWithGroups && a.sharedWithGroups.some((gid: string) => userGroupIds.includes(gid)))
+        );
+      } else {
+        assignments = assignments.filter((a: any) => !a.userId || a.isPublic);
       }
       res.json(assignments);
       return;
@@ -178,11 +189,17 @@ router.get('/assignments', async (req, res) => {
 
     let assignments = await Assignment.find().sort({ createdAt: -1 });
     
+    // Save all to cache, filtering happens at retrieval
+    await redisConnection.set('assignments_list', JSON.stringify(assignments), 'EX', 300);
+    
     if (userId) {
-      assignments = assignments.filter((a: any) => !a.userId || a.userId === userId);
+      assignments = assignments.filter((a: any) => 
+        !a.userId || a.userId === userId || a.isPublic || (a.sharedWithGroups && a.sharedWithGroups.some((gid: string) => userGroupIds.includes(gid)))
+      );
+    } else {
+      assignments = assignments.filter((a: any) => !a.userId || a.isPublic);
     }
     
-    await redisConnection.set('assignments_list', JSON.stringify(assignments), 'EX', 300);
     res.json(assignments);
   } catch (error) {
     console.error('Error fetching assignments:', error);
@@ -197,6 +214,38 @@ router.get('/assignments/:id', async (req, res) => {
       res.status(404).json({ error: 'Assignment not found' });
       return;
     }
+    
+    // Extract userId manually (since route is conditionally public)
+    const authHeader = req.headers.authorization;
+    let userId = null;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+        const { payload } = await jwtVerify(token, secret);
+        userId = payload.userId as string;
+      } catch (e) {}
+    }
+
+    // Determine access logic
+    let hasAccess = false;
+    if (assignment.isPublic || !assignment.userId) {
+      hasAccess = true;
+    } else if (userId) {
+      if (assignment.userId === userId) {
+        hasAccess = true;
+      } else if (assignment.sharedWithGroups && assignment.sharedWithGroups.length > 0) {
+        const userGroups = await Group.find({ members: userId });
+        const userGroupIds = userGroups.map(g => g._id.toString());
+        hasAccess = assignment.sharedWithGroups.some(groupId => userGroupIds.includes(groupId));
+      }
+    }
+
+    if (!hasAccess) {
+      res.status(403).json({ error: 'Access denied: This assignment is private or you do not have permission to view it.' });
+      return;
+    }
+
     res.json(assignment);
   } catch (error) {
     console.error('Error fetching assignment:', error);
@@ -267,6 +316,164 @@ router.post('/assignments/:id/regenerate', authMiddleware, async (req: AuthReque
   } catch (error) {
     console.error('Error regenerating:', error);
     res.status(500).json({ error: 'Failed to regenerate job' });
+  }
+});
+
+// --- Groups API ---
+
+router.post('/groups', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const { name, description } = req.body;
+    const ownerId = req.user!.userId;
+    const inviteCode = uuidv4().slice(0, 8).toUpperCase();
+    
+    const group = new Group({
+      name,
+      description,
+      ownerId,
+      members: [ownerId],
+      inviteCode
+    });
+    
+    await group.save();
+    res.status(201).json(group);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create group' });
+  }
+});
+
+router.get('/groups', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const userId = req.user!.userId;
+    const groups = await Group.find({ members: userId }).sort({ createdAt: -1 });
+    res.json(groups);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch groups' });
+  }
+});
+
+router.post('/groups/join', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const { inviteCode } = req.body;
+    const userId = req.user!.userId;
+    
+    const group = await Group.findOne({ inviteCode });
+    if (!group) {
+      res.status(404).json({ error: 'Invalid invite code' });
+      return;
+    }
+    
+    if (group.members.includes(userId)) {
+      res.status(400).json({ error: 'Already a member of this group' });
+      return;
+    }
+    
+    group.members.push(userId);
+    await group.save();
+    
+    res.json({ message: 'Successfully joined group', group });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to join group' });
+  }
+});
+
+router.get('/groups/:id', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const userId = req.user!.userId;
+    const group = await Group.findById(req.params.id);
+    
+    if (!group) {
+      res.status(404).json({ error: 'Group not found' });
+      return;
+    }
+    
+    if (!group.members.includes(userId)) {
+      res.status(403).json({ error: 'Access denied' });
+      return;
+    }
+    
+    // Fetch assignments shared with this group
+    const assignments = await Assignment.find({ sharedWithGroups: group._id?.toString() }).sort({ createdAt: -1 });
+    
+    res.json({ group, assignments });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch group details' });
+  }
+});
+
+router.delete('/groups/:id/members/:memberId', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const userId = req.user!.userId;
+    const { id, memberId } = req.params;
+
+    const group = await Group.findById(id);
+    if (!group) {
+      res.status(404).json({ error: 'Group not found' });
+      return;
+    }
+
+    if (group.ownerId !== userId) {
+      res.status(403).json({ error: 'Only the group owner can remove members' });
+      return;
+    }
+
+    if (group.ownerId === memberId) {
+      res.status(400).json({ error: 'Owner cannot be removed from the group' });
+      return;
+    }
+
+    group.members = group.members.filter(m => m !== memberId);
+    await group.save();
+
+    res.json({ message: 'Member removed successfully', group });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to remove member' });
+  }
+});
+
+router.post('/assignments/:id/share', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const { groupId, isPublic } = req.body;
+    const assignment = await Assignment.findById(req.params.id);
+    
+    if (!assignment) {
+      res.status(404).json({ error: 'Assignment not found' });
+      return;
+    }
+    
+    if (assignment.userId !== req.user!.userId) {
+      res.status(403).json({ error: 'Only the owner can modify sharing for this assignment' });
+      return;
+    }
+    
+    const updateField: any = {};
+    const updateAction: any = { $set: updateField };
+
+    // Update public flag if provided
+    if (typeof isPublic === 'boolean') {
+      updateField.isPublic = isPublic;
+    }
+    
+    // Update group sharing if provided
+    if (groupId) {
+      updateAction.$addToSet = { sharedWithGroups: groupId };
+    }
+    
+    const queryPayload = Object.keys(updateAction.$set).length > 0 
+      ? updateAction 
+      : { $addToSet: updateAction.$addToSet };
+
+    const updatedAssignment = await Assignment.findByIdAndUpdate(
+      req.params.id,
+      queryPayload,
+      { new: true }
+    );
+    
+    await redisConnection.del('assignments_list');
+    
+    res.json({ message: 'Assignment sharing updated successfully', assignment: updatedAssignment });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to share assignment' });
   }
 });
 
