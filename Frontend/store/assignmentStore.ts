@@ -27,6 +27,7 @@ export type AssignmentData = {
   instructions?: string;
   dueDate?: string;
   jobId: string;
+  joinCode?: string;
   status: 'pending' | 'completed' | 'failed';
   paper?: PaperData;
   userId?: string;

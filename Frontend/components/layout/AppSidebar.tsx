@@ -26,7 +26,8 @@ export function AppSidebar() {
     { label: "Home", icon: LayoutGrid, path: "/home" },
     { label: "My Groups", icon: MessageSquare, path: "/groups" },
     { label: "Assignments", icon: ClipboardList, path: "/assignments", badge: assignments.length > 0 ? assignments.length : null },
-    { label: "AI Teacher's Toolkit", icon: Book, path: "/toolkit" },
+    { label: "My Tests", icon: Book, path: "/submissions" },
+    { label: "AI Teacher's Toolkit", icon: Sparkles, path: "/toolkit" },
     { label: "My Library", icon: ChartPie, path: "/library" },
   ];
 

@@ -88,8 +88,18 @@ export default function HomePage() {
               </Button>
               <Button 
                 variant="outline" 
+                onClick={() => router.push("/test/join")} 
+                className="bg-transparent hover:bg-white/10 text-white border-white/30 rounded-full px-8 h-12 gap-2 font-semibold text-base animate-scale-in"
+                style={{ animationDelay: '0.3s' }}
+              >
+                <GraduationCap className="h-5 w-5 text-amber-400" />
+                Join a Test
+              </Button>
+              <Button 
+                variant="outline" 
                 onClick={() => router.push("/toolkit")} 
-                className="bg-transparent hover:bg-white/10 text-white border-white/30 rounded-full px-8 h-12 gap-2 font-semibold text-base"
+                className="bg-transparent hover:bg-white/10 text-white border-white/30 rounded-full px-8 h-12 gap-2 font-semibold text-base animate-scale-in"
+                style={{ animationDelay: '0.4s' }}
               >
                 Explore Toolkit
                 <ArrowRight className="h-4 w-4" />
