@@ -6,7 +6,7 @@ import { useReactToPrint } from "react-to-print";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { useAssignmentStore, AssignmentData } from "@/store/assignmentStore";
-import { Download, RefreshCw, FileText, Sparkles, Share2, Globe, Users, Lock } from "lucide-react";
+import { Download, RefreshCw, FileText, Sparkles, Share2, Globe, Users, Lock, BarChart3 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -214,6 +214,15 @@ export default function AssignmentResultPage() {
             }
           </h2>
           
+          {!isGenerating && assignment?.joinCode && (
+            <div className="mb-6 flex items-center gap-4">
+              <div className="bg-amber-400/20 text-amber-300 px-6 py-3 rounded-xl border border-amber-400/30 flex items-center gap-3">
+                <span className="text-sm font-bold uppercase tracking-wider">Test Join Code:</span>
+                <span className="text-2xl font-[800] font-bricolage tracking-widest">{assignment.joinCode}</span>
+              </div>
+            </div>
+          )}
+          
           {!isGenerating && paper && (
             <div className="flex flex-wrap items-center gap-4">
               <Button 
@@ -237,6 +246,18 @@ export default function AssignmentResultPage() {
                   Regenerate
                 </span>
               </Button>
+
+              {assignment?.userId && currentUserId === assignment?.userId && (
+                <Button 
+                  onClick={() => router.push(`/assignments/${id}/analytics`)}
+                  className="h-11 px-6 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-white border border-emerald-500/30 rounded-full flex items-center gap-2 transition-all shadow-lg border-0 group"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  <span className="text-[16px] font-[800] tracking-tight" style={{ fontFamily: 'var(--font-bricolage)' }}>
+                    Analytics
+                  </span>
+                </Button>
+              )}
 
               {assignment?.userId && currentUserId === assignment?.userId && (
                 <Dialog 
@@ -329,6 +350,19 @@ export default function AssignmentResultPage() {
           ) : isGenerating ? (
             <div className="flex flex-col items-center justify-center h-64">
               <MultiStepLoader loadingStates={loadingStates} loading={isGenerating} duration={2000} />
+            </div>
+          ) : paper && typeof paper === 'string' ? (
+            <div className="flex flex-col items-center justify-center h-64 text-center">
+              <div className="h-16 w-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <span className="text-red-500 text-2xl">⚠️</span>
+              </div>
+              <h3 className="text-lg font-bold text-[#1A1A1A] mb-2">Deprecated Assignment Format</h3>
+              <p className="text-muted-foreground max-w-md mx-auto mb-6">
+                This assignment was generated using an older format and is no longer supported. Please generate a new assignment.
+              </p>
+              <Button onClick={() => router.push("/assignments")} variant="dark" className="rounded-full shadow-md gap-2" size="lg">
+                Back to Assignments
+              </Button>
             </div>
           ) : paper ? (
             <div className="text-black space-y-8 font-serif">

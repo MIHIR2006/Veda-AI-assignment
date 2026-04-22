@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, MessageSquare, ClipboardList, Book, ChartPie, Settings, Sparkles } from "lucide-react";
+import { LayoutGrid, MessageSquare, ClipboardList, Book, ChartPie, Settings, Sparkles, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -27,6 +27,7 @@ export function AppSidebar() {
     { label: "My Groups", icon: MessageSquare, path: "/groups" },
     { label: "Assignments", icon: ClipboardList, path: "/assignments", badge: assignments.length > 0 ? assignments.length : null },
     { label: "My Tests", icon: Book, path: "/submissions" },
+    { label: "Analytics", icon: BarChart3, path: "/analytics" },
     { label: "AI Teacher's Toolkit", icon: Sparkles, path: "/toolkit" },
     { label: "My Library", icon: ChartPie, path: "/library" },
   ];

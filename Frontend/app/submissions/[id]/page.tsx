@@ -5,7 +5,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { io } from "socket.io-client";
-import { Loader2, CheckCircle2, TrendingDown, Target, BrainCircuit, ArrowLeft } from "lucide-react";
+import { Loader2, CheckCircle2, TrendingDown, Target, BrainCircuit, ArrowLeft, RefreshCw, AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getSession } from "next-auth/react";
 
@@ -67,6 +67,25 @@ export default function SubmissionResultPage({ params }: { params: Promise<{ id:
 
   if (!submission) return null;
 
+  const handleReevaluate = async () => {
+    try {
+      const session = await getSession();
+      const token = (session as any)?.user?.accessToken;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
+      const res = await fetch(`${apiUrl}/api/submissions/${id}/reevaluate`, {
+        method: 'POST',
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      
+      if (!res.ok) throw new Error("Failed to re-evaluate");
+      toast.success("Re-evaluation started");
+      fetchSubmission();
+    } catch (error) {
+      toast.error("Could not start re-evaluation");
+    }
+  };
+
   if (submission.status === 'pending') {
     return (
       <AppLayout>
@@ -75,9 +94,33 @@ export default function SubmissionResultPage({ params }: { params: Promise<{ id:
             <BrainCircuit className="w-12 h-12 text-primary animate-pulse" />
           </div>
           <h2 className="text-2xl font-[800] mb-2 font-bricolage">AI is evaluating...</h2>
-          <p className="text-muted-foreground font-medium">
+          <p className="text-muted-foreground font-medium mb-6">
             Please wait while our Gemini LLM carefully reads and evaluates your answers. This usually takes 10-30 seconds.
           </p>
+          <Button onClick={handleReevaluate} variant="outline" className="rounded-full px-6 font-bold bg-white text-zinc-900 border-neutral-200">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Force Re-evaluate
+          </Button>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (submission.status === 'failed') {
+    return (
+      <AppLayout>
+        <div className="flex flex-col h-[60vh] items-center justify-center text-center max-w-md mx-auto animate-fade-in px-4">
+          <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6">
+            <AlertTriangle className="w-12 h-12 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-[800] mb-2 font-bricolage text-zinc-900">Evaluation Failed</h2>
+          <p className="text-muted-foreground font-medium mb-8">
+            The AI encountered an issue while trying to grade your submission. You can request a re-evaluation to try again.
+          </p>
+          <Button onClick={handleReevaluate} className="rounded-full px-8 h-12 bg-zinc-900 hover:bg-zinc-800 text-white font-bold">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Retry AI Evaluation
+          </Button>
         </div>
       </AppLayout>
     );

@@ -50,14 +50,19 @@ export default function MyTestsPage() {
     <AppLayout title="My Tests">
       <div className="max-w-5xl mx-auto space-y-6 animate-fade-in pb-12 mt-4">
         
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-12 h-12 bg-primary/20 text-primary rounded-xl flex flex-col items-center justify-center">
-            <ClipboardList className="w-6 h-6" />
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-primary/20 text-primary rounded-xl flex flex-col items-center justify-center">
+              <ClipboardList className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-[800] tracking-tight font-bricolage text-zinc-900">Your Attempted Tests</h1>
+              <p className="text-muted-foreground font-semibold">Review your past scores and AI feedback</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-[800] tracking-tight font-bricolage text-zinc-900">Your Attempted Tests</h1>
-            <p className="text-muted-foreground font-semibold">Review your past scores and AI feedback</p>
-          </div>
+          <Button onClick={() => router.push("/test/join")} variant="dark" className="rounded-full px-6 font-bold shadow-sm">
+            Join a Test
+          </Button>
         </div>
 
         {submissions.length === 0 ? (

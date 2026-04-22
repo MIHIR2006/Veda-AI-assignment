@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { getSession } from "next-auth/react";
-import { Loader2, ArrowLeft, BarChart3, Users, Target, TrendingUp, Presentation } from "lucide-react";
+import { Loader2, ArrowLeft, BarChart3, Users, Target, TrendingUp, Presentation, AlertCircle } from "lucide-react";
 
 export default function AssignmentAnalyticsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -43,6 +43,25 @@ export default function AssignmentAnalyticsPage({ params }: { params: Promise<{ 
       <AppLayout>
         <div className="flex h-[60vh] items-center justify-center">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!analytics && !loading) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center h-[60vh] text-center max-w-md mx-auto animate-fade-in px-4">
+          <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6">
+            <AlertCircle className="w-12 h-12 text-red-500" />
+          </div>
+          <h2 className="text-2xl font-[800] mb-2 font-bricolage text-zinc-900">Analytics Unavailable</h2>
+          <p className="text-muted-foreground font-medium mb-8">
+            We couldn't retrieve the analytics for this assignment. This may happen if the assignment is using an older format or if you don't have permission to view it.
+          </p>
+          <Button onClick={() => router.push("/assignments")} variant="dark" className="rounded-full px-8 h-12 font-bold">
+            Back to Assignments
+          </Button>
         </div>
       </AppLayout>
     );

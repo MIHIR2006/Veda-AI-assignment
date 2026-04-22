@@ -313,7 +313,7 @@ router.post('/assignments/:id/regenerate', authMiddleware, async (req: AuthReque
         jobId: newJobId,
         userId: assignment.userId
       },
-      { job: newJobId }
+      { jobId: newJobId }
     );
     
     res.status(202).json({ message: 'Regeneration queued', jobId: newJobId });
@@ -506,7 +506,7 @@ router.get('/assignments/join/:code', async (req, res) => {
     }
 
     if (userId) {
-      const existingSubmission = await Submission.findOne({ assignmentId: assignment._id, userId });
+      const existingSubmission = await Submission.findOne({ assignmentId: assignment._id.toString(), userId });
       if (existingSubmission) {
         res.status(400).json({ error: 'You have already submitted this test.', submissionId: existingSubmission._id });
         return;
@@ -603,6 +603,38 @@ router.get('/submissions/:id', authMiddleware, async (req: AuthRequest, res) => 
     res.json(submission);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch submission details' });
+  }
+});
+
+router.post('/submissions/:id/reevaluate', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const submissionId = req.params.id;
+    const userId = req.user!.userId;
+
+    const submission = await Submission.findById(submissionId);
+    if (!submission) {
+      res.status(404).json({ error: 'Submission not found' });
+      return;
+    }
+
+    if (submission.userId !== userId) {
+      res.status(403).json({ error: 'Access denied' });
+      return;
+    }
+
+    submission.status = 'pending';
+    await submission.save();
+
+    await evaluationQueue.add(
+      'evaluate-submission',
+      { submissionId: submission._id, assignmentId: submission.assignmentId },
+      { jobId: submission._id.toString() }
+    );
+
+    res.json({ message: 'Submission queued for re-evaluation' });
+  } catch (error) {
+    console.error('Error re-evaluating submission:', error);
+    res.status(500).json({ error: 'Failed to re-evaluate submission' });
   }
 });
 
