@@ -45,6 +45,7 @@ io.on('connection', (socket) => {
 app.use('/api', apiRoutes);
 
 import './workers/consumer.js';
+import './workers/evaluator.js';
 
 const PORT = process.env.PORT || 8080;
 

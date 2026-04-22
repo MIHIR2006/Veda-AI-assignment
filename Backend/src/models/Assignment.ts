@@ -13,6 +13,8 @@ export interface IAssignment extends Document {
   userId?: string;
   isPublic?: boolean;
   sharedWithGroups?: string[];
+  joinCode?: string;
+  timeLimit?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -34,7 +36,9 @@ const AssignmentSchema: Schema = new Schema(
     paper: { type: Schema.Types.Mixed },
     userId: { type: String },
     isPublic: { type: Boolean, default: false },
-    sharedWithGroups: [{ type: String }]
+    sharedWithGroups: [{ type: String }],
+    joinCode: { type: String, unique: true, sparse: true },
+    timeLimit: { type: Number, default: 60 }
   },
   { timestamps: true }
 );

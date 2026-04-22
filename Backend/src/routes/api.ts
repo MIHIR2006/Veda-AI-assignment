@@ -4,6 +4,7 @@ import { Redis } from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
 import { Assignment } from '../models/Assignment.js';
 import { User } from '../models/User.js';
+import { Submission } from '../models/Submission.js';
 import { Group } from '../models/Group.js';
 import { authMiddleware, AuthRequest } from '../middleware/authMiddleware.js';
 import { SignJWT, jwtVerify } from 'jose';
@@ -13,6 +14,7 @@ const router = Router();
 const redisConnection = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', { maxRetriesPerRequest: null });
 
 export const paperQueue = new Queue('PaperGenerationQueue', { connection: redisConnection as any });
+export const evaluationQueue = new Queue('EvaluationQueue', { connection: redisConnection as any });
 
 async function createToken(userId: string, email: string): Promise<string> {
   const secret = new TextEncoder().encode(process.env.JWT_SECRET);
@@ -121,6 +123,7 @@ router.post('/generate-paper', authMiddleware, async (req: AuthRequest, res) => 
     const userId = req.user?.userId;
     
     const jobId = uuidv4();
+    const joinCode = uuidv4().slice(0, 6).toUpperCase();
     
     const assignment = new Assignment({
       topic,
@@ -130,6 +133,7 @@ router.post('/generate-paper', authMiddleware, async (req: AuthRequest, res) => 
       instructions,
       dueDate,
       jobId,
+      joinCode,
       status: 'pending',
       userId
     });
@@ -474,6 +478,191 @@ router.post('/assignments/:id/share', authMiddleware, async (req: AuthRequest, r
     res.json({ message: 'Assignment sharing updated successfully', assignment: updatedAssignment });
   } catch (error) {
     res.status(500).json({ error: 'Failed to share assignment' });
+  }
+});
+
+// --- Submissions & Analytics API ---
+
+router.get('/assignments/join/:code', async (req, res) => {
+  try {
+    const { code } = req.params;
+    const assignment = await Assignment.findOne({ joinCode: code.toUpperCase() });
+    
+    if (!assignment) {
+      res.status(404).json({ error: 'Invalid join code' });
+      return;
+    }
+    
+    // Determine if student has already submitted
+    const authHeader = req.headers.authorization;
+    let userId = null;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+        const { payload } = await jwtVerify(token, secret);
+        userId = payload.userId as string;
+      } catch (e) {}
+    }
+
+    if (userId) {
+      const existingSubmission = await Submission.findOne({ assignmentId: assignment._id, userId });
+      if (existingSubmission) {
+        res.status(400).json({ error: 'You have already submitted this test.', submissionId: existingSubmission._id });
+        return;
+      }
+    }
+
+    res.json(assignment);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to join test' });
+  }
+});
+
+router.post('/submissions', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const { assignmentId, studentName, answers } = req.body;
+    const userId = req.user!.userId;
+
+    const assignment = await Assignment.findById(assignmentId);
+    if (!assignment) {
+      res.status(404).json({ error: 'Assignment not found' });
+      return;
+    }
+
+    const existingSubmission = await Submission.findOne({ assignmentId, userId });
+    if (existingSubmission) {
+      res.status(400).json({ error: 'You have already submitted this test.' });
+      return;
+    }
+
+    const submission = new Submission({
+      assignmentId,
+      userId,
+      studentName,
+      answers,
+      status: 'pending'
+    });
+
+    await submission.save();
+
+    await evaluationQueue.add(
+      'evaluate-submission',
+      { submissionId: submission._id, assignmentId: assignment._id },
+      { jobId: submission._id.toString() }
+    );
+
+    res.status(201).json({ message: 'Submission queued for evaluation', submissionId: submission._id });
+  } catch (error) {
+    console.error('Error submitting test:', error);
+    res.status(500).json({ error: 'Failed to submit test' });
+  }
+});
+
+router.get('/submissions/me', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const userId = req.user!.userId;
+    const submissions = await Submission.find({ userId }).sort({ createdAt: -1 });
+
+    const populatedSubmissions = await Promise.all(submissions.map(async (sub) => {
+      const assignment = await Assignment.findById(sub.assignmentId);
+      return {
+        id: sub._id,
+        assignmentId: sub.assignmentId,
+        topic: assignment ? assignment.topic : 'Unknown Topic',
+        status: sub.status,
+        totalMarks: sub.totalMarksAwarded,
+        maxMarks: assignment ? assignment.marks : 0,
+        submittedAt: sub.createdAt
+      };
+    }));
+
+    res.json(populatedSubmissions);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch submissions' });
+  }
+});
+
+router.get('/submissions/:id', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const submission = await Submission.findById(req.params.id);
+    if (!submission) {
+      res.status(404).json({ error: 'Submission not found' });
+      return;
+    }
+
+    if (submission.userId !== req.user!.userId) {
+      // Check if user is the teacher who created the assignment
+      const assignment = await Assignment.findById(submission.assignmentId);
+      if (!assignment || assignment.userId !== req.user!.userId) {
+        res.status(403).json({ error: 'Access denied' });
+        return;
+      }
+    }
+
+    res.json(submission);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch submission details' });
+  }
+});
+
+router.get('/assignments/:id/analytics', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const assignmentId = req.params.id;
+    const assignment = await Assignment.findById(assignmentId);
+
+    if (!assignment) {
+      res.status(404).json({ error: 'Assignment not found' });
+      return;
+    }
+
+    if (assignment.userId !== req.user!.userId) {
+      res.status(403).json({ error: 'Access denied' });
+      return;
+    }
+
+    const submissions = await Submission.find({ assignmentId }).sort({ createdAt: -1 });
+
+    const totalAttempts = submissions.length;
+    const evaluatedSubmissions = submissions.filter(s => s.status === 'evaluated');
+    const evaluatedAttempts = evaluatedSubmissions.length;
+    
+    let totalScore = 0;
+    const weakTopicsMap: { [key: string]: number } = {};
+
+    evaluatedSubmissions.forEach(sub => {
+      totalScore += (sub.totalMarksAwarded || 0);
+      if (sub.weakTopics) {
+        sub.weakTopics.forEach(topic => {
+          weakTopicsMap[topic] = (weakTopicsMap[topic] || 0) + 1;
+        });
+      }
+    });
+
+    const averageScore = evaluatedAttempts > 0 ? (totalScore / evaluatedAttempts) : 0;
+    
+    const commonWeakTopics = Object.entries(weakTopicsMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(entry => entry[0]);
+
+    const mappedSubmissions = submissions.map(sub => ({
+      id: sub._id,
+      studentName: sub.studentName,
+      status: sub.status,
+      score: sub.totalMarksAwarded,
+      submittedAt: sub.createdAt
+    }));
+
+    res.json({
+      totalAttempts,
+      evaluatedAttempts,
+      averageScore,
+      commonWeakTopics,
+      submissions: mappedSubmissions
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch analytics' });
   }
 });
 
