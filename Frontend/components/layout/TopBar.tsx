@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useSession } from "next-auth/react";
 
 interface TopBarProps {
   title?: string;
@@ -35,8 +36,20 @@ const socialLinks = [
 ];
 
 export function TopBar({ title, showBack, onBack }: TopBarProps) {
+  const { data: session } = useSession();
   const displayTitle = title || "Home";
   const Icon = getIconForTitle(displayTitle);
+
+  const user = session?.user;
+  const userName = user?.name || "Guest User";
+  const userEmail = user?.email || "";
+  
+  const initials = userName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || "U";
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border border-border bg-white px-6 rounded-[24px] mb-6 shadow-sm sticky top-3 md:top-4 z-50">
@@ -58,18 +71,20 @@ export function TopBar({ title, showBack, onBack }: TopBarProps) {
           <DropdownMenuTrigger asChild>
             <div className="flex items-center gap-2 cursor-pointer bg-neutral-100 py-1.5 pl-1.5 pr-3 rounded-full hover:bg-neutral-200/70 transition-colors">
               <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-zinc-800 text-zinc-100 text-xs shadow-sm">MG</AvatarFallback>
+                <AvatarFallback className="bg-zinc-800 text-zinc-100 text-xs shadow-sm">
+                  {initials}
+                </AvatarFallback>
               </Avatar>
               <div className="flex items-center gap-1.5 min-w-0">
-                <span className="text-xs font-bold hidden sm:block truncate">Mihir Goswami</span>
+                <span className="text-xs font-bold hidden sm:block truncate">{userName}</span>
                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
               </div>
             </div>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 rounded-xl p-2">
+          {/* <DropdownMenuContent align="end" className="w-56 rounded-xl p-2">
             <div className="px-3 py-2 mb-1">
-              <p className="text-sm font-bold text-foreground">Mihir Goswami</p>
-              <p className="text-xs text-muted-foreground/60 font-medium">mihirgoswami2006@gmail.com</p>
+              <p className="text-sm font-bold text-foreground">{userName}</p>
+              {userEmail && <p className="text-xs text-muted-foreground/60 font-medium">{userEmail}</p>}
             </div>
             <DropdownMenuSeparator />
             {socialLinks.map((link) => (
@@ -91,7 +106,7 @@ export function TopBar({ title, showBack, onBack }: TopBarProps) {
               <Settings className="h-4 w-4 text-muted-foreground/70" />
               Settings
             </DropdownMenuItem>
-          </DropdownMenuContent>
+          </DropdownMenuContent> */}
         </DropdownMenu>
       </div>
     </header>
