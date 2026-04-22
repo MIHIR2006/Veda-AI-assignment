@@ -65,10 +65,10 @@ export default function AnalyticsPage() {
       <AppLayout title="Analytics" showBack onBack={() => router.push("/")}>
         <div className="animate-fade-in">
           <div className="mb-6">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
-              <h1 className="text-2xl font-bold">Analytics</h1>
-            </div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
+            <h1 className="text-2xl font-bold">Analytics</h1>
+          </div>
             <p className="text-sm text-muted-foreground">
               Select an assignment to view its analytics and performance.
             </p>
@@ -125,7 +125,7 @@ export default function AnalyticsPage() {
       <div className="animate-fade-in">
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-1">
-            <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
+            <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
             <h1 className="text-2xl font-bold">Analytics</h1>
           </div>
           <p className="text-sm text-muted-foreground">
@@ -164,20 +164,20 @@ export default function AnalyticsPage() {
             <div
               key={assignment._id}
               onClick={() => router.push(`/assignments/${assignment._id}/analytics`)}
-              className="rounded-[24px] border border-emerald-100 bg-emerald-50/30 p-5 md:p-8 hover:shadow-lg transition-all cursor-pointer group flex flex-col justify-between min-h-[116px] md:min-h-[162px] hover:bg-emerald-50"
+              className="rounded-[24px] border border-neutral-100 bg-card p-5 md:p-8 hover:shadow-lg transition-all cursor-pointer group flex flex-col justify-between min-h-[116px] md:min-h-[162px]"
             >
               <div className="flex items-start justify-between">
-                <h3 className="text-[24px] font-[800] tracking-[-0.04em] leading-[1.2] text-zinc-900 capitalize" style={{ fontFamily: 'var(--font-bricolage)' }}>
+                <h3 className="text-[24px] font-[800] tracking-[-0.04em] leading-[1.2] text-foreground/90 capitalize" style={{ fontFamily: 'var(--font-bricolage)' }}>
                   {assignment.topic || 'Untitled Assignment'}
                 </h3>
               </div>
-              <div className="flex items-center justify-between text-[13.5px] mt-auto pt-4">
-                <span className="text-emerald-700 flex items-center gap-2 group-hover:translate-x-1 transition-transform">
+              <div className="flex items-center justify-between text-[13.5px] mt-auto">
+                <span className="text-muted-foreground/70 flex items-center gap-2 group-hover:text-primary transition-colors">
                   <BarChart3 className="w-4 h-4" />
                   <span className="font-bold">View Performance</span>
                 </span>
                 <span className="text-muted-foreground/70">
-                  <span className="font-bold text-foreground">Assigned</span>: {isMounted ? new Date(assignment.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') : ''}
+                  <span className="font-bold text-foreground">Assigned on</span> : {isMounted ? new Date(assignment.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') : ''}
                 </span>
               </div>
             </div>
